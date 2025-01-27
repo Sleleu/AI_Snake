@@ -1,7 +1,9 @@
 import pygame as pg
 import numpy as np
+import random
 from .Colors import Colors as Col
-from settings import CELL_SIZE, GRID_SIZE, MARGIN, WIDTH, HEIGHT, FPS
+from settings import CELL_SIZE, GRID_SIZE, MARGIN, WIDTH, \
+                     HEIGHT, FPS, GREEN_FRUITS_NB, RED_FRUITS_NB
 
 
 class SnakeGame:
@@ -42,7 +44,7 @@ class SnakeGame:
 
     def start_new_game(self):
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.snake_body = [[5, 5], [5, 4], [5, 3], [5, 2]]
+        self.snake_body = [[5, 5], [5, 4], [5, 3]]
         self.snake_head = self.snake_body[0]
         self.actions = {"UP": (-1, 0),
                         "DOWN": (1, 0),
@@ -51,10 +53,18 @@ class SnakeGame:
         self.direction = "RIGHT"
         self.gameover = False
 
+        self.green_fruits = []
+        self.red_fruits = []
+        for _ in range(GREEN_FRUITS_NB):
+            self.green_fruits.append(self.add_fruit())
+        for _ in range(RED_FRUITS_NB):
+            self.red_fruits.append(self.add_fruit())
+
         self.vision = {}
 
         self.place_items()
         while True:
+            self.clock.tick(FPS)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     pg.quit()
@@ -64,17 +74,34 @@ class SnakeGame:
             self.draw_game()
             self.move_snake()
             reward = self.reward()
-            self.clock.tick(FPS)
             if self.gameover:
                 break
 
     def reward(self) -> float:
+
+        def change_fruit_pos(fruit_lst):
+            fruit_lst.remove(self.snake_head)
+            new_fruit = self.add_fruit()
+            if new_fruit is not None:
+                fruit_lst.append(new_fruit)
+
         if self.snake_head in self.snake_body[1:]:
             self.gameover = True
             return -100
         elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
             self.gameover = True
             return -100
+        elif self.snake_head in self.green_fruits:
+            change_fruit_pos(self.green_fruits)
+            self.snake_body.insert(0, self.snake_head)
+            return 10
+        elif self.snake_head in self.red_fruits:
+            change_fruit_pos(self.red_fruits)
+            self.snake_body.pop()
+            if len(self.snake_body) <= 0:
+                self.gameover = True
+                return -100
+            return -10
         else:
             return -0.2
 
@@ -100,6 +127,16 @@ class SnakeGame:
         self.grid.fill(0)
         for i, snake_part in enumerate(self.snake_body):
             self.grid[snake_part[0]][snake_part[1]] = 2 if i == 0 else 1
+
+    def add_fruit(self):
+        while True:
+            occupied = self.snake_body + self.green_fruits + self.red_fruits
+            fruit = [random.randrange(0, GRID_SIZE),
+                     random.randrange(0, GRID_SIZE)]
+            if fruit not in occupied:
+                return fruit
+            if not np.any(self.grid == 0):
+                return None
 
     def draw_game(self):
         self.surface.fill(Col.BG_COLOR)
@@ -136,6 +173,20 @@ class SnakeGame:
                                  color=Col.SNAKE_COLOR,
                                  rect=snake_cell)
 
+        def draw_fruits(fruits_lst, color):
+            for fruit in fruits_lst:
+                fruit_cell = pg.Rect(fruit[1] * CELL_SIZE + MARGIN,
+                                     fruit[0] * CELL_SIZE + MARGIN,
+                                     CELL_SIZE,
+                                     CELL_SIZE)
+                pg.draw.rect(surface=self.surface,
+                             color=color,
+                             rect=fruit_cell,
+                             border_radius=50,
+                             border_top_left_radius=10)
+
         draw_grid()
         draw_snake()
+        draw_fruits(self.green_fruits, Col.GREEN_FRUIT_COLOR)
+        draw_fruits(self.red_fruits, Col.RED_FRUIT_COLOR)
         pg.display.flip()
