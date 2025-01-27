@@ -44,20 +44,44 @@ class SnakeGame:
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
         self.snake_body = [[5, 5], [5, 4], [5, 3]]
         self.snake_head = self.snake_body[0]
+        self.actions = {"UP": (-1, 0),
+                        "DOWN": (1, 0),
+                        "LEFT": (0, -1),
+                        "RIGHT": (0, 1)}
         self.direction = "RIGHT"
 
         self.vision = {}
 
         self.place_items()
-        print(self.grid)
         while True:
-
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     pg.quit()
                     exit(0)
+                if event.type == pg.KEYDOWN:
+                    self.change_direction(event.key)
             self.draw_game()
+            self.move_snake()
+
             self.clock.tick(FPS)
+
+    def move_snake(self):
+        new_head = [h + a for h, a in zip(self.snake_head, self.actions[self.direction])]
+        self.snake_body.insert(0, new_head)
+        self.snake_head = self.snake_body[0]
+        self.snake_body.pop()
+
+    def change_direction(self, key):
+        match key:
+            case pg.K_UP:
+                self.direction = "UP"
+            case pg.K_DOWN:
+                self.direction = "DOWN"
+            case pg.K_LEFT:
+                self.direction = "LEFT"
+            case pg.K_RIGHT:
+                self.direction = "RIGHT"
+
 
     def place_items(self):
         self.grid.fill(0)
