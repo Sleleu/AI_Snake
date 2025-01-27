@@ -2,8 +2,9 @@ import pygame as pg
 import numpy as np
 import random
 from .Colors import Colors as Col
-from settings import CELL_SIZE, GRID_SIZE, MARGIN, WIDTH, \
-                     HEIGHT, FPS, GREEN_FRUITS_NB, RED_FRUITS_NB
+from .GameDraw import GameDraw
+from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
+                     GREEN_FRUITS_NB, RED_FRUITS_NB
 
 
 class SnakeGame:
@@ -140,53 +141,10 @@ class SnakeGame:
 
     def draw_game(self):
         self.surface.fill(Col.BG_COLOR)
-
-        def draw_grid():
-            for row in range(self.grid.shape[0]):
-                for column in range(self.grid.shape[1]):
-                    grid_cell = pg.Rect(column * CELL_SIZE + MARGIN,
-                                        row * CELL_SIZE + MARGIN,
-                                        CELL_SIZE,
-                                        CELL_SIZE)
-                    if (row + column) % 2 == 0:
-                        pg.draw.rect(surface=self.surface,
-                                     color=Col.GRID_COLOR_EVEN,
-                                     rect=grid_cell)
-                    else:
-                        pg.draw.rect(surface=self.surface,
-                                     color=Col.GRID_COLOR_ODD,
-                                     rect=grid_cell)
-
-        def draw_snake():
-            for snake_part in self.snake_body:
-                snake_cell = pg.Rect(snake_part[1] * CELL_SIZE + MARGIN,
-                                     snake_part[0] * CELL_SIZE + MARGIN,
-                                     CELL_SIZE,
-                                     CELL_SIZE)
-
-                if snake_part == self.snake_head:
-                    pg.draw.rect(surface=self.surface,
-                                 color=Col.SNAKE_HEAD_COLOR,
-                                 rect=snake_cell)
-                else:
-                    pg.draw.rect(surface=self.surface,
-                                 color=Col.SNAKE_COLOR,
-                                 rect=snake_cell)
-
-        def draw_fruits(fruits_lst, color):
-            for fruit in fruits_lst:
-                fruit_cell = pg.Rect(fruit[1] * CELL_SIZE + MARGIN,
-                                     fruit[0] * CELL_SIZE + MARGIN,
-                                     CELL_SIZE,
-                                     CELL_SIZE)
-                pg.draw.rect(surface=self.surface,
-                             color=color,
-                             rect=fruit_cell,
-                             border_radius=50,
-                             border_top_left_radius=10)
-
-        draw_grid()
-        draw_snake()
-        draw_fruits(self.green_fruits, Col.GREEN_FRUIT_COLOR)
-        draw_fruits(self.red_fruits, Col.RED_FRUIT_COLOR)
+        GameDraw.draw_grid(self.surface, self.grid)
+        GameDraw.draw_snake(self.surface, self.snake_body)
+        GameDraw.draw_fruits(self.surface, self.green_fruits,
+                             Col.GREEN_FRUIT_COLOR)
+        GameDraw.draw_fruits(self.surface, self.red_fruits,
+                             Col.RED_FRUIT_COLOR)
         pg.display.flip()
