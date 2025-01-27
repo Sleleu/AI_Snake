@@ -42,13 +42,14 @@ class SnakeGame:
 
     def start_new_game(self):
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.snake_body = [[5, 5], [5, 4], [5, 3]]
+        self.snake_body = [[5, 5], [5, 4], [5, 3], [5, 2]]
         self.snake_head = self.snake_body[0]
         self.actions = {"UP": (-1, 0),
                         "DOWN": (1, 0),
                         "LEFT": (0, -1),
                         "RIGHT": (0, 1)}
         self.direction = "RIGHT"
+        self.gameover = False
 
         self.vision = {}
 
@@ -62,8 +63,20 @@ class SnakeGame:
                     self.change_direction(event.key)
             self.draw_game()
             self.move_snake()
-
+            reward = self.reward()
             self.clock.tick(FPS)
+            if self.gameover:
+                break
+
+    def reward(self) -> float:
+        if self.snake_head in self.snake_body[1:]:
+            self.gameover = True
+            return -100
+        elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
+            self.gameover = True
+            return -100
+        else:
+            return -0.2
 
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
