@@ -10,6 +10,7 @@ def main():
                      model=parser.args.model,
                      train=parser.args.train)
     print(game)
+    game.run()
 
 
 if __name__ == "__main__":
