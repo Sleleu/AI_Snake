@@ -1,6 +1,7 @@
 import pygame as pg
 from .Colors import Colors as Col
 
+
 class SnakeGame:
     def __init__(self,
                  episode: int,
@@ -16,7 +17,7 @@ class SnakeGame:
         self.training = train
 
     def __str__(self):
-        b =  Col.GREEN + "=== Snake Attributes ===\n" + Col.END
+        b = Col.GREEN + "=== Snake Attributes ===\n" + Col.END
         b += f"episode_nb: {self.episode_nb}\n"
         b += f"visual: {self.visual}\n"
         b += f"save: {self.save}\n"

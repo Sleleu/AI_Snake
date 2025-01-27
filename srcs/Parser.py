@@ -1,12 +1,13 @@
 import argparse
 
+
 class Parser:
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument("-e", "--episode",
                                  type=int, default=10)
         self.parser.add_argument("-v", "--visual",
-                                 type=str, choices=("on", "off"),default="on")
+                                 type=str, choices=("on", "off"), default="on")
         self.parser.add_argument("-s", "--save",
                                  type=str, default=None)
         self.parser.add_argument("-m", "--model",
