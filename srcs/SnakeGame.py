@@ -69,20 +69,20 @@ class SnakeGame:
 
         self.place_items()
         while True:
-            self.clock.tick(FPS)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     pg.quit()
                     exit(0)
                 if event.type == pg.KEYDOWN:
                     self.change_direction(event.key)
-            self.draw_game()
             self.move_snake()
             state = self.get_state()
             reward = self.reward()
             if self.gameover:
                 break
             self.step += 1
+            self.draw_game()
+            self.clock.tick(FPS)
 
         if len(self.snake_body) > self.max_length:
             self.max_length = len(self.snake_body)
@@ -125,11 +125,11 @@ class SnakeGame:
             state.append(body_dists[i * 2])
             state.append(body_dists[i * 2 + 1])
 
-        # b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
-        # b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
-        # b += f"{Col.GREEN}LEFT: {state[14:21]} "
-        # b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
-        # print(b)
+        b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
+        b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
+        b += f"{Col.GREEN}LEFT: {state[14:21]} "
+        b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
+        print(b)
         # print(f"Raw state: {state}")
         return state
 
