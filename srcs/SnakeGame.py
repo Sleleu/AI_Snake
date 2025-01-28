@@ -65,9 +65,10 @@ class SnakeGame:
         for _ in range(RED_FRUITS_NB):
             self.red_fruits.append(self.add_fruit())
 
-        self.vision = {}
-
         self.place_items()
+        state = self.get_state()
+        self.draw_game()
+        self.clock.tick(FPS)
         while True:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
