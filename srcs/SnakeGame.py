@@ -87,17 +87,50 @@ class SnakeGame:
         if len(self.snake_body) > self.max_length:
             self.max_length = len(self.snake_body)
 
+    def get_item_dist(self, obj_lst):
+        head_y, head_x = self.snake_body[0]
+        results = []
+        directions = {
+            'top': ([y for y, x in obj_lst if x == head_x and y < head_y],
+                    lambda y: head_y - y),
+            'bottom': ([y for y, x in obj_lst if x == head_x and y > head_y],
+                       lambda y: y - head_y),
+            'left': ([x for y, x in obj_lst if y == head_y and x < head_x],
+                     lambda x: head_x - x),
+            'right': ([x for y, x in obj_lst if y == head_y and x > head_x],
+                      lambda x: x - head_x)}
+
+        for objs, dist_func in directions.values():
+            mask = 1 if objs else 0
+            dist = min(map(dist_func, objs)) / GRID_SIZE if objs else 0
+            results.extend([mask, dist])
+        return results
+
     def get_state(self) -> list:
         state = []
         head_y, head_x = self.snake_head
-        dist_wall_right = (GRID_SIZE - head_x - 1) / GRID_SIZE
-        dist_wall_left = head_x / GRID_SIZE
-        dist_wall_bot = (GRID_SIZE - head_y - 1) / GRID_SIZE
-        dist_wall_top = head_y / GRID_SIZE
-        dist_wall = [dist_wall_top, dist_wall_bot, dist_wall_left, dist_wall_right]
-        for dist in dist_wall:
-            state.append(dist)
-        print(state)
+        dist_wall = [head_y / GRID_SIZE,                    # top
+                     (GRID_SIZE - head_y - 1) / GRID_SIZE,  # bottom
+                     head_x / GRID_SIZE,                    # left
+                     (GRID_SIZE - head_x - 1) / GRID_SIZE]  # right
+        green_fruits_dists = self.get_item_dist(self.green_fruits)
+        red_fruits_dists = self.get_item_dist(self.red_fruits)
+        body_dists = self.get_item_dist(self.snake_body[1:])
+        for i in range(4):
+            state.append(dist_wall[i])
+            state.append(green_fruits_dists[i * 2])
+            state.append(green_fruits_dists[i * 2 + 1])
+            state.append(red_fruits_dists[i * 2])
+            state.append(red_fruits_dists[i * 2 + 1])
+            state.append(body_dists[i * 2])
+            state.append(body_dists[i * 2 + 1])
+
+        # b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
+        # b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
+        # b += f"{Col.GREEN}LEFT: {state[14:21]} "
+        # b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
+        # print(b)
+        # print(f"Raw state: {state}")
         return state
 
     def reward(self) -> float:
