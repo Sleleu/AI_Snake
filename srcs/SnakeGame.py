@@ -78,6 +78,7 @@ class SnakeGame:
                     self.change_direction(event.key)
             self.draw_game()
             self.move_snake()
+            state = self.get_state()
             reward = self.reward()
             if self.gameover:
                 break
@@ -85,6 +86,19 @@ class SnakeGame:
 
         if len(self.snake_body) > self.max_length:
             self.max_length = len(self.snake_body)
+
+    def get_state(self) -> list:
+        state = []
+        head_y, head_x = self.snake_head
+        dist_wall_right = (GRID_SIZE - head_x - 1) / GRID_SIZE
+        dist_wall_left = head_x / GRID_SIZE
+        dist_wall_bot = (GRID_SIZE - head_y - 1) / GRID_SIZE
+        dist_wall_top = head_y / GRID_SIZE
+        dist_wall = [dist_wall_top, dist_wall_bot, dist_wall_left, dist_wall_right]
+        for dist in dist_wall:
+            state.append(dist)
+        print(state)
+        return state
 
     def reward(self) -> float:
 
