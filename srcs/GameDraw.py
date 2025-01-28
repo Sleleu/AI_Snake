@@ -1,11 +1,9 @@
 import pygame as pg
 from .Colors import Colors as Col
-from settings import CELL_SIZE, MARGIN
+from settings import CELL_SIZE, MARGIN, WIDTH
 
 
 class GameDraw:
-    def __init__(self):
-        pass
 
     @staticmethod
     def draw_grid(surface, grid):
@@ -54,3 +52,19 @@ class GameDraw:
                          rect=fruit_cell,
                          border_radius=50,
                          border_top_left_radius=10)
+    
+    @staticmethod
+    def draw_length(surface, length):
+        font = pg.font.Font(None, 36)
+
+        length_text = font.render(f"length: {length}", True, Col.GRID_COLOR_EVEN)
+        length_rect = length_text.get_rect(center=(WIDTH // 2, MARGIN // 2))
+        surface.blit(length_text, length_rect)
+
+    @staticmethod
+    def draw_value(surface, key, value, top):
+        font = pg.font.Font(None, 26)
+
+        length_text = font.render(f"{key}: {value}", True, Col.TEXT_COLOR)
+        length_rect = length_text.get_rect(topleft=(10, top))
+        surface.blit(length_text, length_rect)

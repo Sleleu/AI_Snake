@@ -20,6 +20,7 @@ class SnakeGame:
         self.save = save
         self.model = model
         self.training = train
+        self.max_length = 0
 
         self.init_game()
 
@@ -39,9 +40,11 @@ class SnakeGame:
         self.clock = pg.time.Clock()
 
     def run(self):
-        for episode in range(self.episode_nb):
-            print(f"episode: {episode}")
+        self.episode = 0
+        for _ in range(self.episode_nb):
+            print(f"episode: {self.episode}")
             self.start_new_game()
+            self.episode += 1
 
     def start_new_game(self):
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
@@ -53,6 +56,7 @@ class SnakeGame:
                         "RIGHT": (0, 1)}
         self.direction = "RIGHT"
         self.gameover = False
+        self.step = 0
 
         self.green_fruits = []
         self.red_fruits = []
@@ -77,6 +81,10 @@ class SnakeGame:
             reward = self.reward()
             if self.gameover:
                 break
+            self.step += 1
+
+        if len(self.snake_body) > self.max_length:
+            self.max_length = len(self.snake_body)
 
     def reward(self) -> float:
 
@@ -147,4 +155,8 @@ class SnakeGame:
                              Col.GREEN_FRUIT_COLOR)
         GameDraw.draw_fruits(self.surface, self.red_fruits,
                              Col.RED_FRUIT_COLOR)
+        GameDraw.draw_length(self.surface, len(self.snake_body))
+        GameDraw.draw_value(self.surface, "episode", self.episode, 10)
+        GameDraw.draw_value(self.surface, "max length", self.max_length, 30)
+        GameDraw.draw_value(self.surface, "step", self.step, 50)
         pg.display.flip()
