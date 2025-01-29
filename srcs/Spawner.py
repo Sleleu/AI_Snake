@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class Spawner:
     
@@ -33,3 +34,14 @@ class Spawner:
             snake_direction = {"TOP": "BOTTOM", "BOTTOM": "TOP", "LEFT": "RIGHT", "RIGHT": "LEFT"}[body_spawn_dir]
 
             return snake, snake_direction
+
+    @staticmethod
+    def fruit_spawn(snake, green_lst, red_lst, grid_size, grid):
+        while True:
+            occupied = snake + green_lst + red_lst
+            fruit = [random.randrange(0, grid_size),
+                     random.randrange(0, grid_size)]
+            if fruit not in occupied:
+                return fruit
+            if not np.any(grid == 0):
+                return None

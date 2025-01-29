@@ -1,6 +1,5 @@
 import pygame as pg
 import numpy as np
-import random
 from .Colors import Colors as Col
 from .GameDraw import GameDraw
 from .SnakeAgent import SnakeAgent
@@ -73,9 +72,13 @@ class SnakeGame:
         self.green_fruits = []
         self.red_fruits = []
         for _ in range(GREEN_FRUITS_NB):
-            self.green_fruits.append(self.add_fruit())
+            self.green_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
+                                                         self.red_fruits, self.grid_size,
+                                                         self.grid))
         for _ in range(RED_FRUITS_NB):
-            self.red_fruits.append(self.add_fruit())
+            self.red_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
+                                                         self.red_fruits, self.grid_size,
+                                                         self.grid))
 
         self.place_items()
         self.snakeAgent.state = self.get_state()
@@ -94,8 +97,7 @@ class SnakeGame:
             #self.change_direction(action)
             self.move_snake()
             
-            self.snakeAgent.reward = self.reward()
-            print(self.snakeAgent.reward)    
+            #self.snakeAgent.reward = self.reward()   
             self.snakeAgent.next_state = self.get_state()
             #self.snakeAgent.update_policy()
             self.snakeAgent.state = self.snakeAgent.next_state
@@ -122,7 +124,7 @@ class SnakeGame:
                       lambda x: x - head_x)}
 
         for objs, dist_func in directions.values():
-            mask = 1 if objs else 0
+            mask = len(objs) if objs else 0
             dist = min(map(dist_func, objs)) / GRID_SIZE if objs else 0
             results.extend([mask, dist])
         return results
@@ -145,20 +147,15 @@ class SnakeGame:
             state.append(red_fruits_dists[i * 2 + 1])
             state.append(body_dists[i * 2])
             state.append(body_dists[i * 2 + 1])
-
-        # b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
-        # b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
-        # b += f"{Col.GREEN}LEFT: {state[14:21]} "
-        # b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
-        # print(b)
-        # print(f"Raw state: {state}")
         return state
 
     def reward(self) -> float:
 
         def change_fruit_pos(fruit_lst):
             fruit_lst.remove(self.snake_head)
-            new_fruit = self.add_fruit()
+            new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
+                                            self.red_fruits, self.grid_size,
+                                            self.grid)
             if new_fruit is not None:
                 fruit_lst.append(new_fruit)
 
@@ -204,16 +201,6 @@ class SnakeGame:
         self.grid.fill(0)
         for i, snake_part in enumerate(self.snake):
             self.grid[snake_part[0]][snake_part[1]] = 2 if i == 0 else 1
-
-    def add_fruit(self):
-        while True:
-            occupied = self.snake + self.green_fruits + self.red_fruits
-            fruit = [random.randrange(0, GRID_SIZE),
-                     random.randrange(0, GRID_SIZE)]
-            if fruit not in occupied:
-                return fruit
-            if not np.any(self.grid == 0):
-                return None
 
     def draw_game(self):
         self.surface.fill(Col.BG_COLOR)
