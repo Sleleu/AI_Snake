@@ -12,5 +12,6 @@ class Parser:
                                  type=str, default=None)
         self.parser.add_argument("-m", "--model",
                                  type=str, default=None)
-        self.parser.add_argument("-train", action="store_true")
+        self.parser.add_argument("-t", "--train",
+                                 action="store_true")
         self.args = self.parser.parse_args()

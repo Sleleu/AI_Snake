@@ -1,27 +1,61 @@
 import pygame as pg
 import random
+import pickle
 from sklearn.neural_network import MLPRegressor
 import numpy as np
 from collections import deque
+from .Colors import Colors as Col
 
 
 class SnakeAgent:
 
-    def __init__(self, training=True):
+    def __init__(self, training=True, model=None):
         self.epsilon = 0.9 if training else 0
+        self.epsilon_min = 0.01
         self.learning_rate = 0.01
-        self.gamma = 0.9
+        self.gamma = 0.95
         self.reward = 0
         self.training = training
+        self.model = model
 
         self.state = None
         self.next_state = None
         self.reward = 0
         self.ACTIONS = [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]
         self.state_size = 28
+        print(f"training of snakeAgent: {self.training}")
+        print(f"Model loaded: {self.model}")
+        if self.model:
+            self.load_Q_network()
+        else:
+            self.create_Q_network()
 
+        self.replay_buffer = deque(maxlen=10000)
+        self.batch_size = 32
+
+    def save_model(self, filename):
+        try:
+            with open(filename, "wb") as f:
+                pickle.dump(self.Q_network, f)
+                print(f"Model saved as {filename}")
+        except Exception as e:
+            print(f"Error saving model: {e}")
+
+    def load_Q_network(self):
+        try:
+            with open(self.model, "rb") as f:
+                model_loaded = pickle.load(f)
+                self.Q_network = model_loaded
+                print("Model loaded successfully")
+        except Exception as e:
+            print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
+            pg.quit()
+            exit(1)
+        return
+
+    def create_Q_network(self):
         self.Q_network = MLPRegressor(
-            hidden_layer_sizes=(64, 64),
+            hidden_layer_sizes=(64, 48, 32),
             activation="relu",
             solver="adam",
             learning_rate_init=self.learning_rate,
@@ -30,9 +64,6 @@ class SnakeAgent:
         dummy_states = np.zeros((1, self.state_size))
         dummy_targets = np.zeros((1, len(self.ACTIONS)))
         self.Q_network.fit(dummy_states, dummy_targets)
-
-        self.replay_buffer = deque(maxlen=10000)
-        self.batch_size = 64
 
     def select_action(self):
         if self.training and random.random() < self.epsilon:
@@ -68,5 +99,7 @@ class SnakeAgent:
                     * max_next_Q[i]
                     - current_Q_values[i, action_idx]
                     )
-        self.Q_network.partial_fit(states, target_Q_values)
-        self.epsilon *= 0.9998
+        if self.training:
+            self.Q_network.partial_fit(states, target_Q_values)
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= 0.9998

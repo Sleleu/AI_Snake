@@ -11,4 +11,4 @@ GREEN_FRUITS_NB = 3
 RED_FRUITS_NB = 1
 
 # Game speed
-FPS = 1
+FPS = 6000

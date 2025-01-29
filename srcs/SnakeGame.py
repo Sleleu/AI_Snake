@@ -4,6 +4,7 @@ from .Colors import Colors as Col
 from .GameDraw import GameDraw
 from .SnakeAgent import SnakeAgent
 from .Spawner import Spawner
+from .display import print_state
 from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
                      GREEN_FRUITS_NB, RED_FRUITS_NB, SNAKE_SIZE
 
@@ -26,7 +27,7 @@ class SnakeGame:
         self.model = model
         self.training = train
         self.max_length = 0
-        self.snakeAgent = SnakeAgent()
+        self.snakeAgent = SnakeAgent(training=train, model=self.model)
 
         # Game settings
         self.snake_size = snake_size
@@ -45,9 +46,11 @@ class SnakeGame:
     def run(self):
         self.episode = 0
         for _ in range(self.episode_nb):
-            if self.episode % 20 == 0:
+            if self.episode % 200 == 0:
                 print(f"episode: {self.episode}")
                 print(f"epsilon: {self.snakeAgent.epsilon}")
+            if self.episode == 3000:
+                self.snakeAgent.save_model(f"{self.episode}ep.pkl")
             self.start_new_game()
             self.episode += 1
 
@@ -97,13 +100,13 @@ class SnakeGame:
                 if event.type == pg.KEYDOWN:
                     self.change_direction(event.key)
 
-            # action = self.snakeAgent.select_action()
+            action = self.snakeAgent.select_action()
 
-            # self.change_direction(action)
+            self.change_direction(action)
             self.move_snake()
             self.snakeAgent.reward = self.reward()
             self.snakeAgent.next_state = self.get_state()
-            # self.snakeAgent.update_policy()
+            self.snakeAgent.update_policy()
             self.snakeAgent.state = self.snakeAgent.next_state
             if self.gameover:
                 break
@@ -137,6 +140,7 @@ class SnakeGame:
             results.extend([mask, dist])
         return results
 
+
     def get_state(self) -> list:
         state = []
         head_y, head_x = self.snake_head
@@ -155,6 +159,7 @@ class SnakeGame:
             state.append(red_fruits_dists[i * 2 + 1])
             state.append(body_dists[i * 2])
             state.append(body_dists[i * 2 + 1])
+        #print_state(state)
         return state
 
     def reward(self) -> float:
