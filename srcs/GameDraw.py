@@ -52,12 +52,14 @@ class GameDraw:
                          rect=fruit_cell,
                          border_radius=50,
                          border_top_left_radius=10)
-    
+
     @staticmethod
     def draw_length(surface, length):
         font = pg.font.Font(None, 36)
 
-        length_text = font.render(f"length: {length}", True, Col.GRID_COLOR_EVEN)
+        length_text = font.render(f"length: {length}",
+                                  True,
+                                  Col.GRID_COLOR_EVEN)
         length_rect = length_text.get_rect(center=(WIDTH // 2, MARGIN // 2))
         surface.blit(length_text, length_rect)
 
@@ -65,6 +67,8 @@ class GameDraw:
     def draw_value(surface, key, value, top):
         font = pg.font.Font(None, 26)
 
-        length_text = font.render(f"{key}: {value}", True, Col.TEXT_COLOR)
+        length_text = font.render(f"{key}: {value}",
+                                  True,
+                                  Col.TEXT_COLOR)
         length_rect = length_text.get_rect(topleft=(10, top))
         surface.blit(length_text, length_rect)

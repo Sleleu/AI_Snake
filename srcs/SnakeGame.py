@@ -27,13 +27,13 @@ class SnakeGame:
         self.training = train
         self.max_length = 0
         self.snakeAgent = SnakeAgent()
-        
+
         # Game settings
         self.snake_size = snake_size
         self.green_fruits_nb = green_fruits_nb
         self.red_fruits_nb = red_fruits_nb
         self.grid_size = grid_size
-        
+
         self.init_game()
 
     def init_game(self):
@@ -59,10 +59,11 @@ class SnakeGame:
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
         try:
             self.snake, self.direction = Spawner.snake_spawn(self.snake_size,
-                                                                  self.grid_size,
-                                                                  self.actions)
+                                                             self.grid_size,
+                                                             self.actions)
             fruits_nb = self.red_fruits_nb + self.green_fruits_nb
-            assert fruits_nb <= (self.grid_size**2 - len(self.snake)), "Not enough place to spawn fruits"
+            assert fruits_nb <= (self.grid_size**2 - len(self.snake)), \
+                "Not enough place to spawn fruits"
         except AssertionError as e:
             print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
             pg.quit()
@@ -74,11 +75,15 @@ class SnakeGame:
         self.green_fruits = []
         self.red_fruits = []
         for _ in range(self.green_fruits_nb):
-            self.green_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                                         self.red_fruits, self.grid_size))
+            self.green_fruits.append(Spawner.fruit_spawn(self.snake,
+                                                         self.green_fruits,
+                                                         self.red_fruits,
+                                                         self.grid_size))
         for _ in range(self.red_fruits_nb):
-            self.red_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                                         self.red_fruits, self.grid_size))
+            self.red_fruits.append(Spawner.fruit_spawn(self.snake,
+                                                       self.green_fruits,
+                                                       self.red_fruits,
+                                                       self.grid_size))
 
         self.place_items()
         self.snakeAgent.state = self.get_state()
@@ -91,14 +96,14 @@ class SnakeGame:
                     exit(0)
                 if event.type == pg.KEYDOWN:
                     self.change_direction(event.key)
-            
-            #action = self.snakeAgent.select_action()
-            
-            #self.change_direction(action)
+
+            # action = self.snakeAgent.select_action()
+
+            # self.change_direction(action)
             self.move_snake()
-            self.snakeAgent.reward = self.reward()   
+            self.snakeAgent.reward = self.reward()
             self.snakeAgent.next_state = self.get_state()
-            #self.snakeAgent.update_policy()
+            # self.snakeAgent.update_policy()
             self.snakeAgent.state = self.snakeAgent.next_state
             if self.gameover:
                 break
@@ -108,7 +113,7 @@ class SnakeGame:
 
         if len(self.snake) > self.max_length:
             self.max_length = len(self.snake)
-        if self.snakeAgent.reward == 1000: #win test
+        if self.snakeAgent.reward == 1000:  # win test
             self.draw_game()
             print("WON")
             pg.time.delay(1000)
@@ -157,8 +162,7 @@ class SnakeGame:
         def change_fruit_pos(fruit_lst):
             fruit_lst.remove(self.snake_head)
             new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                            self.red_fruits, self.grid_size,
-                                            self.grid)
+                                            self.red_fruits, self.grid_size)
             if new_fruit is not None:
                 fruit_lst.append(new_fruit)
         if self.snake_head in self.snake[1:]:
