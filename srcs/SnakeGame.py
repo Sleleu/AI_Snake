@@ -4,6 +4,7 @@ import random
 from .Colors import Colors as Col
 from .GameDraw import GameDraw
 from .SnakeAgent import SnakeAgent
+from .Spawner import Spawner
 from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
                      GREEN_FRUITS_NB, RED_FRUITS_NB, SNAKE_SIZE
 
@@ -51,37 +52,6 @@ class SnakeGame:
             self.start_new_game()
             self.episode += 1
 
-    def snake_spawn(self):
-        assert self.snake_size <= self.grid_size, "Snake size can't be greater than grid size"
-        rand = lambda: random.randint(0, self.grid_size - 1)
-
-        while True:
-            head_x, head_y = rand(), rand()
-            snake_body = [[head_y, head_x]]
-            
-            valid_directions = []
-            for dir_name, (dy, dx) in self.actions.items():
-                new_y = head_y + dy * (self.snake_size - 1)
-                new_x = head_x + dx * (self.snake_size - 1)
-                if 0 <= new_y < self.grid_size and 0 <= new_x < self.grid_size:
-                    valid_directions.append((dir_name, dy, dx))
-
-            if not valid_directions:
-                continue
-
-            body_spawn_dir, dy, dx = random.choice(valid_directions)
-            
-            # Build snake
-            for _ in range(1, self.snake_size):
-                head_y += dy
-                head_x += dx
-                snake_body.append([head_y, head_x])
-
-            # Inverse of body spawn direction, to have a natural first direction
-            self.direction = {"TOP": "BOTTOM", "BOTTOM": "TOP", "LEFT": "RIGHT", "RIGHT": "LEFT"}[body_spawn_dir]
-
-            return snake_body
-
     def start_new_game(self):
         self.actions = {"TOP": (-1, 0),
                         "BOTTOM": (1, 0),
@@ -89,13 +59,14 @@ class SnakeGame:
                         "RIGHT": (0, 1)}
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
         try:
-            self.snake_body = self.snake_spawn()
+            self.snake, self.direction = Spawner.snake_spawn(self.snake_size,
+                                                                  self.grid_size,
+                                                                  self.actions)
         except AssertionError as e:
             print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
             pg.quit()
             exit(1)
-        self.snake_head = self.snake_body[0]
-        #self.direction = "RIGHT"
+        self.snake_head = self.snake[0]
         self.gameover = False
         self.step = 0
 
@@ -134,8 +105,8 @@ class SnakeGame:
             self.draw_game()
             self.clock.tick(FPS)
 
-        if len(self.snake_body) > self.max_length:
-            self.max_length = len(self.snake_body)
+        if len(self.snake) > self.max_length:
+            self.max_length = len(self.snake)
 
     def get_item_dist(self, obj_lst):
         head_y, head_x = self.snake_head
@@ -165,7 +136,7 @@ class SnakeGame:
                      (GRID_SIZE - head_x - 1) / GRID_SIZE]  # right
         green_fruits_dists = self.get_item_dist(self.green_fruits)
         red_fruits_dists = self.get_item_dist(self.red_fruits)
-        body_dists = self.get_item_dist(self.snake_body[1:])
+        body_dists = self.get_item_dist(self.snake[1:])
         for i in range(4):
             state.append(dist_wall[i])
             state.append(green_fruits_dists[i * 2])
@@ -191,7 +162,7 @@ class SnakeGame:
             if new_fruit is not None:
                 fruit_lst.append(new_fruit)
 
-        if self.snake_head in self.snake_body[1:]:
+        if self.snake_head in self.snake[1:]:
             self.gameover = True
             return -100
         elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
@@ -199,12 +170,12 @@ class SnakeGame:
             return -100
         elif self.snake_head in self.green_fruits:
             change_fruit_pos(self.green_fruits)
-            self.snake_body.insert(0, self.snake_head)
+            self.snake.insert(0, self.snake_head)
             return 20
         elif self.snake_head in self.red_fruits:
             change_fruit_pos(self.red_fruits)
-            self.snake_body.pop()
-            if len(self.snake_body) <= 0:
+            self.snake.pop()
+            if len(self.snake) <= 0:
                 self.gameover = True
                 return -100
             return -20
@@ -214,9 +185,9 @@ class SnakeGame:
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
                                           self.actions[self.direction])]
-        self.snake_body.insert(0, new_head)
-        self.snake_head = self.snake_body[0]
-        self.snake_body.pop()
+        self.snake.insert(0, new_head)
+        self.snake_head = self.snake[0]
+        self.snake.pop()
 
     def change_direction(self, key):
         match key:
@@ -231,12 +202,12 @@ class SnakeGame:
 
     def place_items(self):
         self.grid.fill(0)
-        for i, snake_part in enumerate(self.snake_body):
+        for i, snake_part in enumerate(self.snake):
             self.grid[snake_part[0]][snake_part[1]] = 2 if i == 0 else 1
 
     def add_fruit(self):
         while True:
-            occupied = self.snake_body + self.green_fruits + self.red_fruits
+            occupied = self.snake + self.green_fruits + self.red_fruits
             fruit = [random.randrange(0, GRID_SIZE),
                      random.randrange(0, GRID_SIZE)]
             if fruit not in occupied:
@@ -247,12 +218,12 @@ class SnakeGame:
     def draw_game(self):
         self.surface.fill(Col.BG_COLOR)
         GameDraw.draw_grid(self.surface, self.grid)
-        GameDraw.draw_snake(self.surface, self.snake_body)
+        GameDraw.draw_snake(self.surface, self.snake)
         GameDraw.draw_fruits(self.surface, self.green_fruits,
                              Col.GREEN_FRUIT_COLOR)
         GameDraw.draw_fruits(self.surface, self.red_fruits,
                              Col.RED_FRUIT_COLOR)
-        GameDraw.draw_length(self.surface, len(self.snake_body))
+        GameDraw.draw_length(self.surface, len(self.snake))
         GameDraw.draw_value(self.surface, "episode", self.episode, 10)
         GameDraw.draw_value(self.surface, "max length", self.max_length, 30)
         GameDraw.draw_value(self.surface, "step", self.step, 50)
