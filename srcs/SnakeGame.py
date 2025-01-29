@@ -3,6 +3,7 @@ import numpy as np
 import random
 from .Colors import Colors as Col
 from .GameDraw import GameDraw
+from .SnakeAgent import SnakeAgent
 from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
                      GREEN_FRUITS_NB, RED_FRUITS_NB
 
@@ -21,7 +22,7 @@ class SnakeGame:
         self.model = model
         self.training = train
         self.max_length = 0
-
+        self.snakeAgent = SnakeAgent()
         self.init_game()
 
     def __str__(self):
@@ -42,7 +43,9 @@ class SnakeGame:
     def run(self):
         self.episode = 0
         for _ in range(self.episode_nb):
-            print(f"episode: {self.episode}")
+            if self.episode % 20 == 0:
+                print(f"episode: {self.episode}")
+                print(f"epsilon: {self.snakeAgent.epsilon}")
             self.start_new_game()
             self.episode += 1
 
@@ -50,8 +53,8 @@ class SnakeGame:
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
         self.snake_body = [[5, 5], [5, 4], [5, 3]]
         self.snake_head = self.snake_body[0]
-        self.actions = {"UP": (-1, 0),
-                        "DOWN": (1, 0),
+        self.actions = {"TOP": (-1, 0),
+                        "BOTTOM": (1, 0),
                         "LEFT": (0, -1),
                         "RIGHT": (0, 1)}
         self.direction = "RIGHT"
@@ -66,7 +69,7 @@ class SnakeGame:
             self.red_fruits.append(self.add_fruit())
 
         self.place_items()
-        state = self.get_state()
+        self.snakeAgent.state = self.get_state()
         self.draw_game()
         self.clock.tick(FPS)
         while True:
@@ -76,9 +79,16 @@ class SnakeGame:
                     exit(0)
                 if event.type == pg.KEYDOWN:
                     self.change_direction(event.key)
+            
+            action = self.snakeAgent.select_action()
+            
+            self.change_direction(action)
             self.move_snake()
-            state = self.get_state()
-            reward = self.reward()
+            
+            self.snakeAgent.reward = self.reward()    
+            self.snakeAgent.next_state = self.get_state()
+            self.snakeAgent.update_policy()
+            self.snakeAgent.state = self.snakeAgent.next_state
             if self.gameover:
                 break
             self.step += 1
@@ -89,7 +99,7 @@ class SnakeGame:
             self.max_length = len(self.snake_body)
 
     def get_item_dist(self, obj_lst):
-        head_y, head_x = self.snake_body[0]
+        head_y, head_x = self.snake_head
         results = []
         directions = {
             'top': ([y for y, x in obj_lst if x == head_x and y < head_y],
@@ -126,11 +136,11 @@ class SnakeGame:
             state.append(body_dists[i * 2])
             state.append(body_dists[i * 2 + 1])
 
-        b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
-        b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
-        b += f"{Col.GREEN}LEFT: {state[14:21]} "
-        b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
-        print(b)
+        # b = f"{Col.CYAN}{Col.BOLD}TOP: {state[0:7]} "
+        # b += f"{Col.YELLOW}BOTTOM: {state[7:14]} "
+        # b += f"{Col.GREEN}LEFT: {state[14:21]} "
+        # b += f"{Col.MAGENTA}RIGHT: {state[21:28]}{Col.END} "
+        # print(b)
         # print(f"Raw state: {state}")
         return state
 
@@ -151,16 +161,16 @@ class SnakeGame:
         elif self.snake_head in self.green_fruits:
             change_fruit_pos(self.green_fruits)
             self.snake_body.insert(0, self.snake_head)
-            return 10
+            return 20
         elif self.snake_head in self.red_fruits:
             change_fruit_pos(self.red_fruits)
             self.snake_body.pop()
             if len(self.snake_body) <= 0:
                 self.gameover = True
                 return -100
-            return -10
+            return -20
         else:
-            return -0.2
+            return -0.5
 
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
@@ -172,9 +182,9 @@ class SnakeGame:
     def change_direction(self, key):
         match key:
             case pg.K_UP:
-                self.direction = "UP"
+                self.direction = "TOP"
             case pg.K_DOWN:
-                self.direction = "DOWN"
+                self.direction = "BOTTOM"
             case pg.K_LEFT:
                 self.direction = "LEFT"
             case pg.K_RIGHT:
