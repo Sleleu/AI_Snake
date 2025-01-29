@@ -1,5 +1,4 @@
 import random
-import numpy as np
 
 class Spawner:
     
@@ -36,12 +35,12 @@ class Spawner:
             return snake, snake_direction
 
     @staticmethod
-    def fruit_spawn(snake, green_lst, red_lst, grid_size, grid):
-        while True:
-            occupied = snake + green_lst + red_lst
-            fruit = [random.randrange(0, grid_size),
-                     random.randrange(0, grid_size)]
-            if fruit not in occupied:
-                return fruit
-            if not np.any(grid == 0):
-                return None
+    def fruit_spawn(snake, green_lst, red_lst, grid_size):
+        all_occupied = {tuple(pos) for pos in (snake + green_lst + red_lst)}
+        all_positions = {(y, x) for y in range(grid_size) for x in range(grid_size)}
+        available_positions = list(all_positions - all_occupied)
+        
+        if available_positions:
+            y, x = random.choice(available_positions)
+            return [y, x]
+        return None

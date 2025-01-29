@@ -61,6 +61,8 @@ class SnakeGame:
             self.snake, self.direction = Spawner.snake_spawn(self.snake_size,
                                                                   self.grid_size,
                                                                   self.actions)
+            fruits_nb = self.red_fruits_nb + self.green_fruits_nb
+            assert fruits_nb <= (self.grid_size**2 - len(self.snake)), "Not enough place to spawn fruits"
         except AssertionError as e:
             print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
             pg.quit()
@@ -71,14 +73,12 @@ class SnakeGame:
 
         self.green_fruits = []
         self.red_fruits = []
-        for _ in range(GREEN_FRUITS_NB):
+        for _ in range(self.green_fruits_nb):
             self.green_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                                         self.red_fruits, self.grid_size,
-                                                         self.grid))
-        for _ in range(RED_FRUITS_NB):
+                                                         self.red_fruits, self.grid_size))
+        for _ in range(self.red_fruits_nb):
             self.red_fruits.append(Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                                         self.red_fruits, self.grid_size,
-                                                         self.grid))
+                                                         self.red_fruits, self.grid_size))
 
         self.place_items()
         self.snakeAgent.state = self.get_state()
@@ -96,8 +96,7 @@ class SnakeGame:
             
             #self.change_direction(action)
             self.move_snake()
-            
-            #self.snakeAgent.reward = self.reward()   
+            self.snakeAgent.reward = self.reward()   
             self.snakeAgent.next_state = self.get_state()
             #self.snakeAgent.update_policy()
             self.snakeAgent.state = self.snakeAgent.next_state
@@ -109,6 +108,10 @@ class SnakeGame:
 
         if len(self.snake) > self.max_length:
             self.max_length = len(self.snake)
+        if self.snakeAgent.reward == 1000: #win test
+            self.draw_game()
+            print("WON")
+            pg.time.delay(1000)
 
     def get_item_dist(self, obj_lst):
         head_y, head_x = self.snake_head
@@ -124,7 +127,7 @@ class SnakeGame:
                       lambda x: x - head_x)}
 
         for objs, dist_func in directions.values():
-            mask = len(objs) if objs else 0
+            mask = 1 if objs else 0
             dist = min(map(dist_func, objs)) / GRID_SIZE if objs else 0
             results.extend([mask, dist])
         return results
@@ -158,7 +161,6 @@ class SnakeGame:
                                             self.grid)
             if new_fruit is not None:
                 fruit_lst.append(new_fruit)
-
         if self.snake_head in self.snake[1:]:
             self.gameover = True
             return -100
@@ -167,16 +169,20 @@ class SnakeGame:
             return -100
         elif self.snake_head in self.green_fruits:
             change_fruit_pos(self.green_fruits)
-            self.snake.insert(0, self.snake_head)
+            if len(self.snake) >= (self.grid_size**2 - (self.red_fruits_nb)):
+                self.gameover = True
+                return 1000
             return 20
         elif self.snake_head in self.red_fruits:
-            change_fruit_pos(self.red_fruits)
             self.snake.pop()
+            self.snake.pop()
+            change_fruit_pos(self.red_fruits)
             if len(self.snake) <= 0:
                 self.gameover = True
                 return -100
             return -20
         else:
+            self.snake.pop()
             return -0.5
 
     def move_snake(self):
@@ -184,7 +190,6 @@ class SnakeGame:
                                           self.actions[self.direction])]
         self.snake.insert(0, new_head)
         self.snake_head = self.snake[0]
-        self.snake.pop()
 
     def change_direction(self, key):
         match key:
