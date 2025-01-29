@@ -5,7 +5,7 @@ from .Colors import Colors as Col
 from .GameDraw import GameDraw
 from .SnakeAgent import SnakeAgent
 from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
-                     GREEN_FRUITS_NB, RED_FRUITS_NB
+                     GREEN_FRUITS_NB, RED_FRUITS_NB, SNAKE_SIZE
 
 
 class SnakeGame:
@@ -14,7 +14,11 @@ class SnakeGame:
                  visual: str,
                  save: str | None,
                  model: str | None,
-                 train: bool):
+                 train: bool,
+                 snake_size: int = SNAKE_SIZE,
+                 green_fruits_nb: int = GREEN_FRUITS_NB,
+                 red_fruits_nb: int = RED_FRUITS_NB,
+                 grid_size: int = GRID_SIZE):
 
         self.episode_nb = episode
         self.visual = visual
@@ -23,16 +27,14 @@ class SnakeGame:
         self.training = train
         self.max_length = 0
         self.snakeAgent = SnakeAgent()
+        
+        # Game settings
+        self.snake_size = snake_size
+        self.green_fruits_nb = green_fruits_nb
+        self.red_fruits_nb = red_fruits_nb
+        self.grid_size = grid_size
+        
         self.init_game()
-
-    def __str__(self):
-        b = Col.GREEN + "=== Snake Attributes ===\n" + Col.END
-        b += f"episode_nb: {self.episode_nb}\n"
-        b += f"visual: {self.visual}\n"
-        b += f"save: {self.save}\n"
-        b += f"model: {self.model}\n"
-        b += f"training: {self.training}\n"
-        return b
 
     def init_game(self):
         pg.init()
@@ -49,15 +51,51 @@ class SnakeGame:
             self.start_new_game()
             self.episode += 1
 
+    def snake_spawn(self):
+        assert self.snake_size <= self.grid_size, "Snake size can't be greater than grid size"
+        rand = lambda: random.randint(0, self.grid_size - 1)
+
+        while True:
+            head_x, head_y = rand(), rand()
+            snake_body = [[head_y, head_x]]
+            
+            valid_directions = []
+            for dir_name, (dy, dx) in self.actions.items():
+                new_y = head_y + dy * (self.snake_size - 1)
+                new_x = head_x + dx * (self.snake_size - 1)
+                if 0 <= new_y < self.grid_size and 0 <= new_x < self.grid_size:
+                    valid_directions.append((dir_name, dy, dx))
+
+            if not valid_directions:
+                continue
+
+            body_spawn_dir, dy, dx = random.choice(valid_directions)
+            
+            # Build snake
+            for _ in range(1, self.snake_size):
+                head_y += dy
+                head_x += dx
+                snake_body.append([head_y, head_x])
+
+            # Inverse of body spawn direction, to have a natural first direction
+            self.direction = {"TOP": "BOTTOM", "BOTTOM": "TOP", "LEFT": "RIGHT", "RIGHT": "LEFT"}[body_spawn_dir]
+
+            return snake_body
+
     def start_new_game(self):
-        self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.snake_body = [[5, 5], [5, 4], [5, 3]]
-        self.snake_head = self.snake_body[0]
         self.actions = {"TOP": (-1, 0),
                         "BOTTOM": (1, 0),
                         "LEFT": (0, -1),
                         "RIGHT": (0, 1)}
-        self.direction = "RIGHT"
+        self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
+        try:
+            self.snake_body = self.snake_spawn()
+        except AssertionError as e:
+            print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
+            pg.quit()
+            exit(1)
+        self.snake_head = self.snake_body[0]
+        #self.direction = "RIGHT"
         self.gameover = False
         self.step = 0
 
@@ -80,14 +118,15 @@ class SnakeGame:
                 if event.type == pg.KEYDOWN:
                     self.change_direction(event.key)
             
-            action = self.snakeAgent.select_action()
+            #action = self.snakeAgent.select_action()
             
-            self.change_direction(action)
+            #self.change_direction(action)
             self.move_snake()
             
-            self.snakeAgent.reward = self.reward()    
+            self.snakeAgent.reward = self.reward()
+            print(self.snakeAgent.reward)    
             self.snakeAgent.next_state = self.get_state()
-            self.snakeAgent.update_policy()
+            #self.snakeAgent.update_policy()
             self.snakeAgent.state = self.snakeAgent.next_state
             if self.gameover:
                 break

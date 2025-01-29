@@ -1,11 +1,14 @@
+# Default game size
 GRID_SIZE = 10
 CELL_SIZE = 40
 MARGIN = 100
-
 HEIGHT = MARGIN + GRID_SIZE * CELL_SIZE + MARGIN
 WIDTH = MARGIN + GRID_SIZE * CELL_SIZE + MARGIN
 
-FPS = 2000
-
+# Default game settings
+SNAKE_SIZE = 5
 GREEN_FRUITS_NB = 3
 RED_FRUITS_NB = 1
+
+# Game speed
+FPS = 1

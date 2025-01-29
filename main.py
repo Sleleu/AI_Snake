@@ -9,7 +9,6 @@ def main():
                      save=parser.args.save,
                      model=parser.args.model,
                      train=parser.args.train)
-    print(game)
     game.run()
 
 
