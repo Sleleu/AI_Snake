@@ -19,7 +19,7 @@ class SnakeAgent:
         self.model = model
 
         self.ACTIONS = [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]
-        self.state_size = 11
+        self.state_size = 16
         print(f"training of snakeAgent: {self.training}")
         print(f"Model loaded: {self.model}")
         if self.model:

@@ -127,47 +127,46 @@ class SnakeGame:
                 self.draw_game()
             print("WON")
             pg.time.delay(1000)
-
-    def get_item_dist(self, obj_lst):
-        head_y, head_x = self.snake_head
-        results = []
-        directions = {
-            'top': ([y for y, x in obj_lst if x == head_x and y < head_y],
-                    lambda y: head_y - y),
-            'bottom': ([y for y, x in obj_lst if x == head_x and y > head_y],
-                       lambda y: y - head_y),
-            'left': ([x for y, x in obj_lst if y == head_y and x < head_x],
-                     lambda x: head_x - x),
-            'right': ([x for y, x in obj_lst if y == head_y and x > head_x],
-                      lambda x: x - head_x)}
-
-        for objs, dist_func in directions.values():
-            mask = 1 if objs else 0
-            dist = min(map(dist_func, objs)) / GRID_SIZE if objs else 0
-            results.extend([mask, dist])
-        return results
-
-
+    
     def get_state(self) -> list:
+
+        def get_collision_dist(direction):
+            y, x = self.snake_head
+            dy, dx = direction
+            distance = 0
+
+            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
+                y += dy
+                x += dx
+                distance += 1
+            return distance / GRID_SIZE
+
+        def get_item_dist(direction, items_lst):
+            y, x = self.snake_head
+            dy, dx = direction
+            distance = 1
+
+            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
+                if [y, x] in items_lst:
+                    distance = (abs(y - self.snake_head[0]) + abs(x - self.snake_head[1])) / GRID_SIZE
+                    break
+                y += dy
+                x += dx
+            return distance
+
+        directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
         state = []
-        head_y, head_x = self.snake_head
-        dist_wall = [head_y / GRID_SIZE,                    # top
-                     (GRID_SIZE - head_y - 1) / GRID_SIZE,  # bottom
-                     head_x / GRID_SIZE,                    # left
-                     (GRID_SIZE - head_x - 1) / GRID_SIZE]  # right
-        green_fruits_dists = self.get_item_dist(self.green_fruits)
-        red_fruits_dists = self.get_item_dist(self.red_fruits)
-        body_dists = self.get_item_dist(self.snake[1:])
-        for i in range(4):
-            state.append(dist_wall[i])
-            state.append(green_fruits_dists[i * 2])
-            state.append(green_fruits_dists[i * 2 + 1])
-            state.append(red_fruits_dists[i * 2])
-            state.append(red_fruits_dists[i * 2 + 1])
-            state.append(body_dists[i * 2])
-            state.append(body_dists[i * 2 + 1])
-        #print_state(state)
+        
+        for direction in directions:
+            state.append(get_collision_dist(direction))
+        for direction in directions:
+            state.append(get_item_dist(direction, self.green_fruits))
+        for direction in directions:
+            state.append(get_item_dist(direction, self.red_fruits))
+        for direction in directions:
+            state.append(get_item_dist(direction, self.snake[1:]))
         return state
+
 
     def reward(self) -> float:
 
