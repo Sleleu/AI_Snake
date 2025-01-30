@@ -46,13 +46,12 @@ class SnakeGame:
 
     def run(self):
         self.episode = 0
+        from .GameStats import GameStats
+        self.gameStats = GameStats()
         for _ in range(self.episode_nb):
-            if self.episode % 200 == 0:
-                print(f"episode: {self.episode}")
-                print(f"epsilon: {self.snakeAgent.epsilon}")
-            if self.episode == 2000:
-                self.snakeAgent.save_model(f"{self.episode}ep.pkl")
             self.start_new_game()
+            self.save = "save"
+            self.gameStats.get_stats(self)
             self.episode += 1
 
     def start_new_game(self):
@@ -103,6 +102,8 @@ class SnakeGame:
                         exit(0)
                     if event.type == pg.KEYDOWN:
                         self.change_direction(event.key)
+                        if event.key == pg.K_s:
+                            self.snakeAgent.save_model("manual_save.pkl")
 
             action = self.snakeAgent.select_action()
 
@@ -178,15 +179,15 @@ class SnakeGame:
                 fruit_lst.append(new_fruit)
         if self.snake_head in self.snake[1:]:
             self.gameover = True
-            return -100
+            return -20
         elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
             self.gameover = True
-            return -100
+            return -20
         elif self.snake_head in self.green_fruits:
             change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (self.grid_size**2 - (self.red_fruits_nb)):
                 self.gameover = True
-                return 1000
+                return 100
             return 20
         elif self.snake_head in self.red_fruits:
             self.snake.pop()
@@ -194,8 +195,8 @@ class SnakeGame:
             change_fruit_pos(self.red_fruits)
             if len(self.snake) <= 0:
                 self.gameover = True
-                return -100
-            return -20
+                return -20
+            return -5
         else:
             self.snake.pop()
             return -0.5

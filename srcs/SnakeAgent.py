@@ -12,8 +12,8 @@ class SnakeAgent:
     def __init__(self, training=True, model=None):
         self.epsilon = 0.9 if training else 0
         self.epsilon_min = 0.01
-        self.learning_rate = 0.001
-        self.gamma = 0.95
+        self.learning_rate = 0.01
+        self.gamma = 0.9
         self.reward = 0
         self.training = training
         self.model = model
@@ -30,7 +30,7 @@ class SnakeAgent:
         else:
             self.create_Q_network()
 
-        self.replay_buffer = deque(maxlen=10000)
+        self.replay_buffer = deque(maxlen=50000)
         self.batch_size = 32
 
     def save_model(self, filename):
@@ -102,4 +102,4 @@ class SnakeAgent:
         if self.training:
             self.Q_network.partial_fit(states, target_Q_values)
             if self.epsilon > self.epsilon_min:
-                self.epsilon *= 0.9998
+                self.epsilon *= 0.999
