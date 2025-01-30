@@ -12,7 +12,7 @@ class SnakeAgent:
     def __init__(self, training=True, model=None):
         self.epsilon = 0.9 if training else 0
         self.epsilon_min = 0.01
-        self.learning_rate = 0.01
+        self.learning_rate = 0.001
         self.gamma = 0.95
         self.reward = 0
         self.training = training
@@ -55,7 +55,7 @@ class SnakeAgent:
 
     def create_Q_network(self):
         self.Q_network = MLPRegressor(
-            hidden_layer_sizes=(64, 48, 32),
+            hidden_layer_sizes=(64, 64),
             activation="relu",
             solver="adam",
             learning_rate_init=self.learning_rate,

@@ -35,7 +35,8 @@ class SnakeGame:
         self.red_fruits_nb = red_fruits_nb
         self.grid_size = grid_size
 
-        self.init_game()
+        if self.visual == "on":
+            self.init_game()
 
     def init_game(self):
         pg.init()
@@ -49,7 +50,7 @@ class SnakeGame:
             if self.episode % 200 == 0:
                 print(f"episode: {self.episode}")
                 print(f"epsilon: {self.snakeAgent.epsilon}")
-            if self.episode == 3000:
+            if self.episode == 2000:
                 self.snakeAgent.save_model(f"{self.episode}ep.pkl")
             self.start_new_game()
             self.episode += 1
@@ -69,7 +70,8 @@ class SnakeGame:
                 "Not enough place to spawn fruits"
         except AssertionError as e:
             print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
-            pg.quit()
+            if self.visual == "on":
+                pg.quit()
             exit(1)
         self.snake_head = self.snake[0]
         self.gameover = False
@@ -90,15 +92,17 @@ class SnakeGame:
 
         self.place_items()
         self.snakeAgent.state = self.get_state()
-        self.draw_game()
-        self.clock.tick(FPS)
+        if self.visual == "on":
+            self.draw_game()
+            self.clock.tick(FPS)
         while True:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    pg.quit()
-                    exit(0)
-                if event.type == pg.KEYDOWN:
-                    self.change_direction(event.key)
+            if self.visual == "on":
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                        exit(0)
+                    if event.type == pg.KEYDOWN:
+                        self.change_direction(event.key)
 
             action = self.snakeAgent.select_action()
 
@@ -111,13 +115,15 @@ class SnakeGame:
             if self.gameover:
                 break
             self.step += 1
-            self.draw_game()
-            self.clock.tick(FPS)
+            if self.visual == "on":
+                self.draw_game()
+                self.clock.tick(FPS)
 
         if len(self.snake) > self.max_length:
             self.max_length = len(self.snake)
         if self.snakeAgent.reward == 1000:  # win test
-            self.draw_game()
+            if self.visual == "on":
+                self.draw_game()
             print("WON")
             pg.time.delay(1000)
 
