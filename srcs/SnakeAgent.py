@@ -28,7 +28,7 @@ class SnakeAgent:
             self.create_Q_network()
 
         self.replay_buffer = deque(maxlen=50000)
-        self.batch_size = 32
+        self.batch_size = 500
 
     def save_model(self, filename):
         try:
@@ -52,7 +52,7 @@ class SnakeAgent:
 
     def create_Q_network(self):
         self.Q_network = MLPRegressor(
-            hidden_layer_sizes=(64, 64),
+            hidden_layer_sizes=(256),
             activation="relu",
             solver="adam",
             learning_rate_init=self.learning_rate,

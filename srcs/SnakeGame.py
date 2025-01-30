@@ -60,6 +60,9 @@ class SnakeGame:
                         "LEFT": (0, -1),
                         "RIGHT": (0, 1)}
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
+        self.corners = [[0, 0], [0, GRID_SIZE-1], 
+                       [GRID_SIZE-1, 0], [GRID_SIZE-1, GRID_SIZE-1]]
+        self.active_corner_idx = 0
         try:
             self.snake, self.direction = Spawner.snake_spawn(self.snake_size,
                                                              self.grid_size,
@@ -170,6 +173,25 @@ class SnakeGame:
 
     def reward(self) -> float:
 
+        def get_closest_fruit():
+            directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+            min_distance = 1
+            
+            for dy, dx in directions:
+                y, x = self.snake_head
+                distance = 0
+                while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
+                    if [y, x] in self.green_fruits:
+                        normalized_dist = distance / GRID_SIZE
+                        min_distance = min(min_distance, normalized_dist)
+                        break
+                    y += dy
+                    x += dx
+                    distance += 1
+            
+            return min_distance
+
+
         def change_fruit_pos(fruit_lst):
             fruit_lst.remove(self.snake_head)
             new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
@@ -198,7 +220,14 @@ class SnakeGame:
             return -5
         else:
             self.snake.pop()
-            return -0.5
+            min_dist = get_closest_fruit()
+
+            # Corner reward
+            if self.snake_head == self.corners[self.active_corner_idx]:
+                self.active_corner_idx = (self.active_corner_idx + 1) % 4
+                return 5
+
+            return 2 - (min_dist * 2)
 
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
