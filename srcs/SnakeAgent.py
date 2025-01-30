@@ -18,11 +18,8 @@ class SnakeAgent:
         self.training = training
         self.model = model
 
-        self.state = None
-        self.next_state = None
-        self.reward = 0
         self.ACTIONS = [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]
-        self.state_size = 28
+        self.state_size = 11
         print(f"training of snakeAgent: {self.training}")
         print(f"Model loaded: {self.model}")
         if self.model:
@@ -65,17 +62,17 @@ class SnakeAgent:
         dummy_targets = np.zeros((1, len(self.ACTIONS)))
         self.Q_network.fit(dummy_states, dummy_targets)
 
-    def select_action(self):
+    def select_action(self, state):
         if self.training and random.random() < self.epsilon:
-            self.action = random.choice(self.ACTIONS)
+            action = random.choice(self.ACTIONS)
         else:
-            state = np.array(self.state).reshape(1, -1)
+            state = np.array(state).reshape(1, -1)
             Q_values = self.Q_network.predict(state)[0]
-            self.action = self.ACTIONS[np.argmax(Q_values)]
-        return self.action
+            action = self.ACTIONS[np.argmax(Q_values)]
+        return action
 
-    def update_policy(self):
-        transition = (self.state, self.action, self.reward, self.next_state)
+    def update_policy(self, state, next_state, action, reward):
+        transition = (state, action, reward, next_state)
         self.replay_buffer.append(transition)
 
         batch = random.sample(self.replay_buffer,

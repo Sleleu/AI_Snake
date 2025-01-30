@@ -90,7 +90,7 @@ class SnakeGame:
                                                        self.grid_size))
 
         self.place_items()
-        self.snakeAgent.state = self.get_state()
+        state = self.get_state()
         if self.visual == "on":
             self.draw_game()
             self.clock.tick(FPS)
@@ -105,14 +105,14 @@ class SnakeGame:
                         if event.key == pg.K_s:
                             self.snakeAgent.save_model("manual_save.pkl")
 
-            action = self.snakeAgent.select_action()
+            action = self.snakeAgent.select_action(state)
 
             self.change_direction(action)
             self.move_snake()
-            self.snakeAgent.reward = self.reward()
-            self.snakeAgent.next_state = self.get_state()
-            self.snakeAgent.update_policy()
-            self.snakeAgent.state = self.snakeAgent.next_state
+            reward = self.reward()
+            next_state = self.get_state()
+            self.snakeAgent.update_policy(state, next_state, action, reward)
+            state = next_state
             if self.gameover:
                 break
             self.step += 1
@@ -122,7 +122,7 @@ class SnakeGame:
 
         if len(self.snake) > self.max_length:
             self.max_length = len(self.snake)
-        if self.snakeAgent.reward == 1000:  # win test
+        if reward == 1000:  # win test
             if self.visual == "on":
                 self.draw_game()
             print("WON")
