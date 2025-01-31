@@ -44,7 +44,7 @@ class Memory:
 class SnakeAgent:
     def __init__(self, training=True, model=None):
         self.epsilon = 0.9 if training else 0
-        self.epsilon_min = 0.001
+        self.epsilon_min = 0.05
         
         self.lr = 0.001
         self.gamma = 0.9

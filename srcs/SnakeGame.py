@@ -180,24 +180,24 @@ class SnakeGame:
     def reward(self) -> float:
         if self.snake_head in self.snake[1:]:
             self.gameover = True
-            return -20
+            return -1
         elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
             self.gameover = True
-            return -20
+            return -1
         elif self.snake_head in self.green_fruits:
             self.change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (self.grid_size**2 - (self.red_fruits_nb)):
                 self.gameover = True
                 return 100
-            return 20
+            return 1
         elif self.snake_head in self.red_fruits:
             self.snake.pop()
             self.snake.pop()
             self.change_fruit_pos(self.red_fruits)
             if len(self.snake) <= 0:
                 self.gameover = True
-                return -20
-            return -5
+                return -1
+            return -0.2
         else:
             self.snake.pop()
             return 0
