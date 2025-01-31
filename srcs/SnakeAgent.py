@@ -6,97 +6,164 @@ import numpy as np
 from collections import deque
 from .Colors import Colors as Col
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+import os
+
+class QNetwork(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+        
+    def forward(self, state):
+        hidden = F.relu(self.fc1(state))
+        q_values = self.fc2(hidden)
+        return q_values
+    
+class Memory:
+    def __init__(self, memory_size):
+        self.buffer = deque(maxlen=memory_size)
+    
+    def push(self, state, action, reward, next_state, done):
+        experience = (state, action, reward, next_state, done)
+        self.buffer.append(experience)
+    
+    def sample(self, batch_size):
+        batch_size = min(batch_size, len(self.buffer))
+        batch = random.sample(list(self.buffer), batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
+
+        states = torch.FloatTensor(states)
+        actions = torch.LongTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        next_states = torch.FloatTensor(next_states)
+        dones = torch.FloatTensor(dones)
+        
+        return states, actions, rewards, next_states, dones
+
 
 class SnakeAgent:
-
     def __init__(self, training=True, model=None):
         self.epsilon = 0.9 if training else 0
         self.epsilon_min = 0.01
-        self.learning_rate = 0.01
+        
+        self.lr = 0.01
         self.gamma = 0.9
-        self.reward = 0
-        self.training = training
-        self.model = model
+        self.batch_size = 64
+        
+        self.model = QNetwork(16, 64, 4)
+        self.memory = Memory(20_000)
+        self.criterion = nn.MSELoss()
+        
+        if model:
+            self.load_model(model)
+        self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
 
-        self.ACTIONS = [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]
-        self.state_size = 16
-        print(f"training of snakeAgent: {self.training}")
-        print(f"Model loaded: {self.model}")
-        if self.model:
-            self.load_Q_network()
-        else:
-            self.create_Q_network()
+    def update(self, state, action, reward, next_state, done):
+        self.memory.push(state, action, reward, next_state, done)
+        self.learn()
 
-        self.replay_buffer = deque(maxlen=50000)
-        self.batch_size = 500
+    def load_model(self, path):
+        self.model.load_state_dict(torch.load(path))
+        self.model.eval()
+    
+    def save_model(self, path):
+        torch.save(self.model.state_dict(), path)
+            
 
-    def save_model(self, filename):
-        try:
-            with open(filename, "wb") as f:
-                pickle.dump(self.Q_network, f)
-                print(f"Model saved as {filename}")
-        except Exception as e:
-            print(f"Error saving model: {e}")
+# class SnakeAgent:
 
-    def load_Q_network(self):
-        try:
-            with open(self.model, "rb") as f:
-                model_loaded = pickle.load(f)
-                self.Q_network = model_loaded
-                print("Model loaded successfully")
-        except Exception as e:
-            print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
-            pg.quit()
-            exit(1)
-        return
+#     def __init__(self, training=True, model=None):
+#         self.epsilon = 0.9 if training else 0
+#         self.epsilon_min = 0.01
+#         self.learning_rate = 0.01
+#         self.gamma = 0.9
+#         self.reward = 0
+#         self.training = training
+#         self.model = model
 
-    def create_Q_network(self):
-        self.Q_network = MLPRegressor(
-            hidden_layer_sizes=(256),
-            activation="relu",
-            solver="adam",
-            learning_rate_init=self.learning_rate,
-            random_state=42
-        )
-        dummy_states = np.zeros((1, self.state_size))
-        dummy_targets = np.zeros((1, len(self.ACTIONS)))
-        self.Q_network.fit(dummy_states, dummy_targets)
+#         self.ACTIONS = [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]
+#         self.state_size = 16
+#         print(f"training of snakeAgent: {self.training}")
+#         print(f"Model loaded: {self.model}")
+#         if self.model:
+#             self.load_Q_network()
+#         else:
+#             self.create_Q_network()
 
-    def select_action(self, state):
-        if self.training and random.random() < self.epsilon:
-            action = random.choice(self.ACTIONS)
-        else:
-            state = np.array(state).reshape(1, -1)
-            Q_values = self.Q_network.predict(state)[0]
-            action = self.ACTIONS[np.argmax(Q_values)]
-        return action
+#         self.replay_buffer = deque(maxlen=50000)
+#         self.batch_size = 500
 
-    def update_policy(self, state, next_state, action, reward):
-        transition = (state, action, reward, next_state)
-        self.replay_buffer.append(transition)
+#     def save_model(self, filename):
+#         try:
+#             with open(filename, "wb") as f:
+#                 pickle.dump(self.Q_network, f)
+#                 print(f"Model saved as {filename}")
+#         except Exception as e:
+#             print(f"Error saving model: {e}")
 
-        batch = random.sample(self.replay_buffer,
-                              min(self.batch_size, len(self.replay_buffer)))
-        states, actions, rewards, next_states = zip(*batch)
+#     def load_Q_network(self):
+#         try:
+#             with open(self.model, "rb") as f:
+#                 model_loaded = pickle.load(f)
+#                 self.Q_network = model_loaded
+#                 print("Model loaded successfully")
+#         except Exception as e:
+#             print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
+#             pg.quit()
+#             exit(1)
+#         return
 
-        states = np.array(states)
-        next_states = np.array(next_states)
+#     def create_Q_network(self):
+#         self.Q_network = MLPRegressor(
+#             hidden_layer_sizes=(256),
+#             activation="relu",
+#             solver="adam",
+#             learning_rate_init=self.learning_rate,
+#             random_state=42
+#         )
+#         dummy_states = np.zeros((1, self.state_size))
+#         dummy_targets = np.zeros((1, len(self.ACTIONS)))
+#         self.Q_network.fit(dummy_states, dummy_targets)
 
-        current_Q_values = self.Q_network.predict(states)
-        next_Q_values = self.Q_network.predict(next_states)
-        max_next_Q = np.max(next_Q_values, axis=1)
+#     def select_action(self, state):
+#         if self.training and random.random() < self.epsilon:
+#             action = random.choice(self.ACTIONS)
+#         else:
+#             state = np.array(state).reshape(1, -1)
+#             Q_values = self.Q_network.predict(state)[0]
+#             action = self.ACTIONS[np.argmax(Q_values)]
+#         return action
 
-        target_Q_values = current_Q_values.copy()
-        for i, (action, reward) in enumerate(zip(actions, rewards)):
-            action_idx = self.ACTIONS.index(action)
-            target_Q_values[i, action_idx] = \
-                current_Q_values[i, action_idx] + self.learning_rate * (
-                    reward
-                    + self.gamma
-                    * max_next_Q[i]
-                    - current_Q_values[i, action_idx]
-                    )
-        if self.training:
-            self.Q_network.partial_fit(states, target_Q_values)
-            if self.epsilon > self.epsilon_min:
-                self.epsilon *= 0.999
+#     def update_policy(self, state, next_state, action, reward):
+#         transition = (state, action, reward, next_state)
+#         self.replay_buffer.append(transition)
+
+#         batch = random.sample(self.replay_buffer,
+#                               min(self.batch_size, len(self.replay_buffer)))
+#         states, actions, rewards, next_states = zip(*batch)
+
+#         states = np.array(states)
+#         next_states = np.array(next_states)
+
+#         current_Q_values = self.Q_network.predict(states)
+#         next_Q_values = self.Q_network.predict(next_states)
+#         max_next_Q = np.max(next_Q_values, axis=1)
+
+#         target_Q_values = current_Q_values.copy()
+#         for i, (action, reward) in enumerate(zip(actions, rewards)):
+#             action_idx = self.ACTIONS.index(action)
+#             target_Q_values[i, action_idx] = \
+#                 current_Q_values[i, action_idx] + self.learning_rate * (
+#                     reward
+#                     + self.gamma
+#                     * max_next_Q[i]
+#                     - current_Q_values[i, action_idx]
+#                     )
+#         if self.training:
+#             self.Q_network.partial_fit(states, target_Q_values)
+#             if self.epsilon > self.epsilon_min:
+#                 self.epsilon *= 0.999
