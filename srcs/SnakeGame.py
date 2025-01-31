@@ -60,9 +60,6 @@ class SnakeGame:
                         "LEFT": (0, -1),
                         "RIGHT": (0, 1)}
         self.grid = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.corners = [[0, 0], [0, GRID_SIZE-1], 
-                       [GRID_SIZE-1, 0], [GRID_SIZE-1, GRID_SIZE-1]]
-        self.active_corner_idx = 0
         try:
             self.snake, self.direction = Spawner.snake_spawn(self.snake_size,
                                                              self.grid_size,
@@ -106,15 +103,18 @@ class SnakeGame:
                     if event.type == pg.KEYDOWN:
                         self.change_direction(event.key)
                         if event.key == pg.K_s:
-                            self.snakeAgent.save_model("manual_save.pkl")
+                            self.snakeAgent.save_model("manual_save.pt")
+                            print("Model saved as 'manual_save.pt'")
 
-            action = self.snakeAgent.select_action(state)
+            action = self.snakeAgent.get_action(state)
 
             self.change_direction(action)
             self.move_snake()
             reward = self.reward()
             next_state = self.get_state()
-            self.snakeAgent.update_policy(state, next_state, action, reward)
+            if self.training:
+                self.snakeAgent.update(state, action, reward, next_state, self.gameover)
+                self.snakeAgent.learn()
             state = next_state
             if self.gameover:
                 break
@@ -170,34 +170,14 @@ class SnakeGame:
             state.append(get_item_dist(direction, self.snake[1:]))
         return state
 
+    def change_fruit_pos(self, fruit_lst):
+        fruit_lst.remove(self.snake_head)
+        new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
+                                        self.red_fruits, self.grid_size)
+        if new_fruit is not None:
+            fruit_lst.append(new_fruit)
 
     def reward(self) -> float:
-
-        def get_closest_fruit():
-            directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
-            min_distance = 1
-            
-            for dy, dx in directions:
-                y, x = self.snake_head
-                distance = 0
-                while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
-                    if [y, x] in self.green_fruits:
-                        normalized_dist = distance / GRID_SIZE
-                        min_distance = min(min_distance, normalized_dist)
-                        break
-                    y += dy
-                    x += dx
-                    distance += 1
-            
-            return min_distance
-
-
-        def change_fruit_pos(fruit_lst):
-            fruit_lst.remove(self.snake_head)
-            new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                            self.red_fruits, self.grid_size)
-            if new_fruit is not None:
-                fruit_lst.append(new_fruit)
         if self.snake_head in self.snake[1:]:
             self.gameover = True
             return -20
@@ -205,7 +185,7 @@ class SnakeGame:
             self.gameover = True
             return -20
         elif self.snake_head in self.green_fruits:
-            change_fruit_pos(self.green_fruits)
+            self.change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (self.grid_size**2 - (self.red_fruits_nb)):
                 self.gameover = True
                 return 100
@@ -213,21 +193,14 @@ class SnakeGame:
         elif self.snake_head in self.red_fruits:
             self.snake.pop()
             self.snake.pop()
-            change_fruit_pos(self.red_fruits)
+            self.change_fruit_pos(self.red_fruits)
             if len(self.snake) <= 0:
                 self.gameover = True
                 return -20
             return -5
         else:
             self.snake.pop()
-            min_dist = get_closest_fruit()
-
-            # Corner reward
-            if self.snake_head == self.corners[self.active_corner_idx]:
-                self.active_corner_idx = (self.active_corner_idx + 1) % 4
-                return 5
-
-            return 2 - (min_dist * 2)
+            return 0
 
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
@@ -237,13 +210,13 @@ class SnakeGame:
 
     def change_direction(self, key):
         match key:
-            case pg.K_UP:
+            case 0:
                 self.direction = "TOP"
-            case pg.K_DOWN:
+            case 1:
                 self.direction = "BOTTOM"
-            case pg.K_LEFT:
+            case 2:
                 self.direction = "LEFT"
-            case pg.K_RIGHT:
+            case 3:
                 self.direction = "RIGHT"
 
     def place_items(self):
