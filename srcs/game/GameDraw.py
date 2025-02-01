@@ -1,5 +1,5 @@
 import pygame as pg
-from .Colors import Colors as Col
+from ..display.Colors import Colors as Col
 from settings import CELL_SIZE, MARGIN, WIDTH
 
 

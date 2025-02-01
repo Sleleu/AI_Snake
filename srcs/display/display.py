@@ -1,4 +1,4 @@
-from .Colors import Colors as Col
+from ..display.Colors import Colors as Col
 
 def print_state(state):
         

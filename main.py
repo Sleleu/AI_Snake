@@ -1,9 +1,25 @@
-from srcs.SnakeGame import SnakeGame
-from srcs.Parser import Parser
-from srcs.Colors import Colors as Col
+from srcs.game.SnakeGame import SnakeGame
+from srcs.display.Colors import Colors as Col
 from settings import WIDTH, HEIGHT
 import pygame as pg
+import argparse
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", "--episode",
+                                 type=int, default=10)
+    parser.add_argument("-v", "--visual",
+                                 type=str, choices=("on", "off"), default="on")
+    parser.add_argument("-s", "--save",
+                                 type=str, default=None)
+    parser.add_argument("-m", "--model",
+                                 type=str, default=None)
+    parser.add_argument("-t", "--train",
+                                 action="store_true")
+    parser.add_argument("-step-by-step", action="store_true")
+    parser.add_argument("-p", "--player", action="store_true")
+    
+    return parser.parse_args()
 
 def init_pygame():
     pg.init()
@@ -11,19 +27,19 @@ def init_pygame():
 
 def main():
     try:
-        parser = Parser()
+        args = parse_arguments()
 
         surface = None
-        is_ai_control = True if parser.args.player == False else False
-        if parser.args.visual == "on":
+        is_ai_control = True if args.player == False else False
+        if args.visual == "on":
             surface = init_pygame()
             pg.display.set_caption('Learn2Slither')
-        game = SnakeGame(episode=parser.args.episode,
-                        visual=parser.args.visual,
-                        save=parser.args.save,
-                        model=parser.args.model,
-                        train=parser.args.train,
-                        step_by_step=parser.args.step_by_step,
+        game = SnakeGame(episode=args.episode,
+                        visual=args.visual,
+                        save=args.save,
+                        model=args.model,
+                        train=args.train,
+                        step_by_step=args.step_by_step,
                         is_ai_control=is_ai_control,
                         surface=surface)
         game.run()
@@ -34,7 +50,7 @@ def main():
         print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
         exit(1)
     finally:
-        if parser.args.visual == "on":
+        if args.visual == "on":
             pg.quit()
 
 

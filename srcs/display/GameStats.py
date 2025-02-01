@@ -1,4 +1,4 @@
-from .SnakeGame import SnakeGame
+from ..game.SnakeGame import SnakeGame
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime

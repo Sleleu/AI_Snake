@@ -1,13 +1,12 @@
 import pygame as pg
-import numpy as np
-from .Colors import Colors as Col
+from ..display.Colors import Colors as Col
 from .GameDraw import GameDraw
-from .SnakeAgent import SnakeAgent
+from ..agent.SnakeAgent import SnakeAgent
 from .Spawner import Spawner
-from .Interpreter import Interpreter
+from ..agent.Interpreter import Interpreter
 from .EventHandler import EventHandler
 from .GameState import GameState
-from .display import print_state
+from ..display.display import print_state
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
                      R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION
@@ -41,7 +40,7 @@ class SnakeGame:
 
     def run(self):
         self.episode = 0
-        from .GameStats import GameStats
+        from ..display.GameStats import GameStats
         self.gameStats = GameStats()
         for _ in range(self.gameState.episode_nb):
             is_continue = self.run_episode()
