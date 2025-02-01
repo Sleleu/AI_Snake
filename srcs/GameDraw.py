@@ -6,21 +6,21 @@ from settings import CELL_SIZE, MARGIN, WIDTH
 class GameDraw:
 
     @staticmethod
-    def draw_grid(surface, grid):
-        for row in range(grid.shape[0]):
-            for column in range(grid.shape[1]):
+    def draw_grid(surface, grid_size):
+        for row in range(grid_size):
+            for column in range(grid_size):
                 grid_cell = pg.Rect(column * CELL_SIZE + MARGIN,
                                     row * CELL_SIZE + MARGIN,
                                     CELL_SIZE,
                                     CELL_SIZE)
                 if (row + column) % 2 == 0:
                     pg.draw.rect(surface=surface,
-                                 color=Col.GRID_COLOR_EVEN,
-                                 rect=grid_cell)
+                                color=Col.GRID_COLOR_EVEN,
+                                rect=grid_cell)
                 else:
                     pg.draw.rect(surface=surface,
-                                 color=Col.GRID_COLOR_ODD,
-                                 rect=grid_cell)
+                                color=Col.GRID_COLOR_ODD,
+                                rect=grid_cell)
 
     @staticmethod
     def draw_snake(surface, snake_body):

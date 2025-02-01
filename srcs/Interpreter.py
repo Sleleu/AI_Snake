@@ -1,29 +1,27 @@
-from ..settings import R_COLLISION, R_GREEN_FRUIT, R_RED_FRUIT, R_WIN
+from settings import R_COLLISION, R_GREEN_FRUIT, R_RED_FRUIT, GRID_SIZE
 
 class Interpreter:
-    def __init__(self, grid_size):
-        self.grid_size = grid_size
-
-    def get_state(self, snake_head, snake_body, green_fruits, red_fruits) -> list:
+    @staticmethod
+    def get_state(snake_head, snake_body, green_fruits, red_fruits) -> list:
         def get_collision_dist(direction):
             y, x = snake_head
             dy, dx = direction
             distance = 0
 
-            while 0 <= y < self.grid_size and 0 <= x < self.grid_size:
+            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
                 y += dy
                 x += dx
                 distance += 1
-            return distance / self.grid_size
+            return distance / GRID_SIZE
 
         def get_item_dist(direction, items_lst):
             y, x = snake_head
             dy, dx = direction
             distance = 1
 
-            while 0 <= y < self.grid_size and 0 <= x < self.grid_size:
+            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
                 if [y, x] in items_lst:
-                    distance = (abs(y - snake_head[0]) + abs(x - snake_head[1])) / self.grid_size
+                    distance = (abs(y - snake_head[0]) + abs(x - snake_head[1])) / GRID_SIZE
                     break
                 y += dy
                 x += dx
@@ -42,13 +40,14 @@ class Interpreter:
             state.append(get_item_dist(direction, snake_body[1:]))
         return state
 
-    def get_reward(self, snake_head, snake_body, green_fruits, red_fruits) -> tuple[float, bool]:
+    @staticmethod
+    def get_reward(snake_head, snake_body, green_fruits, red_fruits) -> tuple[float, bool]:
         gameover = True
         Ok = False
-        
+
         if snake_head in snake_body[1:]:
             return R_COLLISION, gameover
-        elif self.grid_size in snake_head or -1 in snake_head:
+        elif GRID_SIZE in snake_head or -1 in snake_head:
             return R_COLLISION, gameover
         elif snake_head in green_fruits:
             return R_GREEN_FRUIT, Ok
