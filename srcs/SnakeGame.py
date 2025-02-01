@@ -4,9 +4,11 @@ from .Colors import Colors as Col
 from .GameDraw import GameDraw
 from .SnakeAgent import SnakeAgent
 from .Spawner import Spawner
+from .Interpreter import Interpreter
 from .display import print_state
 from settings import GRID_SIZE, WIDTH, HEIGHT, FPS, \
-                     GREEN_FRUITS_NB, RED_FRUITS_NB, SNAKE_SIZE
+                     GREEN_FRUITS_NB, RED_FRUITS_NB, SNAKE_SIZE, \
+                     R_GREEN_FRUIT, R_RED_FRUIT, R_WIN
 
 
 class SnakeGame:
@@ -28,6 +30,7 @@ class SnakeGame:
         self.training = train
         self.max_length = 0
         self.snakeAgent = SnakeAgent(training=train, model=self.model)
+        self.interpreter = Interpreter(grid_size)
 
         # Game settings
         self.snake_size = snake_size
@@ -125,50 +128,19 @@ class SnakeGame:
 
         if len(self.snake) > self.max_length:
             self.max_length = len(self.snake)
-        if reward == 1000:  # win test
+        if reward == R_WIN:
             if self.visual == "on":
                 self.draw_game()
             print("WON")
             pg.time.delay(1000)
     
     def get_state(self) -> list:
-
-        def get_collision_dist(direction):
-            y, x = self.snake_head
-            dy, dx = direction
-            distance = 0
-
-            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
-                y += dy
-                x += dx
-                distance += 1
-            return distance / GRID_SIZE
-
-        def get_item_dist(direction, items_lst):
-            y, x = self.snake_head
-            dy, dx = direction
-            distance = 1
-
-            while 0 <= y < GRID_SIZE and 0 <= x < GRID_SIZE:
-                if [y, x] in items_lst:
-                    distance = (abs(y - self.snake_head[0]) + abs(x - self.snake_head[1])) / GRID_SIZE
-                    break
-                y += dy
-                x += dx
-            return distance
-
-        directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
-        state = []
-        
-        for direction in directions:
-            state.append(get_collision_dist(direction))
-        for direction in directions:
-            state.append(get_item_dist(direction, self.green_fruits))
-        for direction in directions:
-            state.append(get_item_dist(direction, self.red_fruits))
-        for direction in directions:
-            state.append(get_item_dist(direction, self.snake[1:]))
-        return state
+        return self.interpreter.get_state(
+            self.snake_head,
+            self.snake,
+            self.green_fruits,
+            self.red_fruits
+        )
 
     def change_fruit_pos(self, fruit_lst):
         fruit_lst.remove(self.snake_head)
@@ -178,29 +150,24 @@ class SnakeGame:
             fruit_lst.append(new_fruit)
 
     def reward(self) -> float:
-        if self.snake_head in self.snake[1:]:
-            self.gameover = True
-            return -1
-        elif GRID_SIZE in self.snake_head or -1 in self.snake_head:
-            self.gameover = True
-            return -1
-        elif self.snake_head in self.green_fruits:
+        reward, self.gameover = self.interpreter.get_reward(
+            self.snake_head,
+            self.snake,
+            self.green_fruits,
+            self.red_fruits
+        )
+        if reward == R_GREEN_FRUIT:
             self.change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (self.grid_size**2 - (self.red_fruits_nb)):
                 self.gameover = True
                 return 100
-            return 1
-        elif self.snake_head in self.red_fruits:
+        elif reward == R_RED_FRUIT:
             self.snake.pop()
             self.snake.pop()
             self.change_fruit_pos(self.red_fruits)
-            if len(self.snake) <= 0:
-                self.gameover = True
-                return -1
-            return -0.2
-        else:
+        elif reward == 0:
             self.snake.pop()
-            return 0
+        return reward
 
     def move_snake(self):
         new_head = [h + a for h, a in zip(self.snake_head,
