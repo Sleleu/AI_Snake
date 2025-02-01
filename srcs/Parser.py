@@ -14,4 +14,6 @@ class Parser:
                                  type=str, default=None)
         self.parser.add_argument("-t", "--train",
                                  action="store_true")
+        self.parser.add_argument("-step-by-step", action="store_true")
+        self.parser.add_argument("-p", "--player", action="store_true")
         self.args = self.parser.parse_args()

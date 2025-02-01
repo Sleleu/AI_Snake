@@ -6,10 +6,12 @@ from .SnakeAgent import SnakeAgent
 from .Spawner import Spawner
 from .Interpreter import Interpreter
 from .EventHandler import EventHandler
+from .GameState import GameState
 from .display import print_state
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
-                     R_GREEN_FRUIT, R_RED_FRUIT
+                     R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION
+
 
 class SnakeGame:
     def __init__(self,
@@ -18,26 +20,30 @@ class SnakeGame:
                  save: str | None,
                  model: str | None,
                  train: bool,
+                 step_by_step: bool,
+                 is_ai_control: bool,
                  surface=None):
 
-        self.episode_nb = episode
-        self.visual = visual
         self.save = save
         self.model = model
         self.training = train
-        self.max_length = 0
         self.snakeAgent = SnakeAgent(training=train, model=self.model)
+        self.gameState = GameState(
+            is_ai_control,
+            step_by_step,
+            episode,
+            visual)
         self.interpreter = Interpreter()
 
         self.surface = surface
-        if self.visual == "on":
+        if self.gameState.visual:
             self.clock = pg.time.Clock()
 
     def run(self):
         self.episode = 0
         from .GameStats import GameStats
         self.gameStats = GameStats()
-        for _ in range(self.episode_nb):
+        for _ in range(self.gameState.episode_nb):
             is_continue = self.run_episode()
             if not is_continue:
                 break
@@ -48,16 +54,17 @@ class SnakeGame:
     def episode_step(self, state):
         action = self.snakeAgent.get_action(state)
         
-        self.change_direction(action)
+        if self.gameState.is_ai_control:
+            self.change_direction(action)
         self.move_snake()
         
         reward = self.reward()
         next_state = self.get_state()
         
         if self.training:
-            self.snakeAgent.update(state, action, reward, next_state, self.gameover)
+            self.snakeAgent.update(state, action, reward, next_state, self.gameState.gameover)
             self.snakeAgent.learn()
-        self.step += 1
+        self.gameState.step += 1
         return next_state
 
     def spawn_fruits(self):
@@ -80,28 +87,33 @@ class SnakeGame:
         if fruits_nb >= (GRID_SIZE**2 - len(self.snake)):
             raise AssertionError("Not enough place to spawn fruits")
         self.snake_head = self.snake[0]
-        self.gameover = False
-        self.step = 0
 
     def run_episode(self):
         self.init_episode()
         self.spawn_fruits()
         state = self.get_state()
 
-        if self.visual == "on":
+        if self.gameState.visual:
             self.draw_game()
             self.clock.tick(FPS)
         
-        while not self.gameover:
-            if EventHandler.handle(self.visual, self.snakeAgent, self.change_direction):
+        while not self.gameState.gameover:
+            quit_game, step_move = EventHandler.handle(
+                self.gameState,
+                self.snakeAgent,
+                self.change_direction, 
+            )
+            if quit_game:
                 return False
-            
-            state = self.episode_step(state)
-            if self.visual == "on":
+
+            if self.gameState.should_step(step_move):
+                state = self.episode_step(state)
+
+            if self.gameState.visual:
                 self.draw_game()
                 self.clock.tick(FPS)
-        if len(self.snake) > self.max_length:
-            self.max_length = len(self.snake)
+        
+        self.gameState.update(len(self.snake))
             
         return True
     
@@ -121,7 +133,7 @@ class SnakeGame:
             fruit_lst.append(new_fruit)
 
     def reward(self) -> float:
-        reward, self.gameover = self.interpreter.get_reward(
+        reward, self.gameState.gameover = self.interpreter.get_reward(
             self.snake_head,
             self.snake,
             self.green_fruits,
@@ -130,10 +142,13 @@ class SnakeGame:
         if reward == R_GREEN_FRUIT:
             self.change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (GRID_SIZE**2 - (RED_FRUITS_NB)):
-                self.gameover = True
+                self.gameState.gameover = True
                 return 100
         elif reward == R_RED_FRUIT:
             self.snake.pop()
+            if len(self.snake) <= 1:
+                self.gameState.gameover = True
+                return R_COLLISION
             self.snake.pop()
             self.change_fruit_pos(self.red_fruits)
         elif reward == 0:
@@ -167,6 +182,6 @@ class SnakeGame:
                              Col.RED_FRUIT_COLOR)
         GameDraw.draw_length(self.surface, len(self.snake))
         GameDraw.draw_value(self.surface, "episode", self.episode, 10)
-        GameDraw.draw_value(self.surface, "max length", self.max_length, 30)
-        GameDraw.draw_value(self.surface, "step", self.step, 50)
+        GameDraw.draw_value(self.surface, "max length", self.gameState.max_length, 30)
+        GameDraw.draw_value(self.surface, "step", self.gameState.step, 50)
         pg.display.flip()
