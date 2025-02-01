@@ -11,6 +11,9 @@ class Colors:
     GREEN_FRUIT_COLOR = pg.Color((0, 255, 0))
     RED_FRUIT_COLOR = pg.Color((255, 0, 0))
     TEXT_COLOR = pg.Color('white')
+    TEXT_RED = pg.Color('red')
+    TEXT_GREEN = pg.Color('green')
+    TEXT_CYAN = pg.Color('cyan')
 
     # ASCII colors
     MAGENTA = '\033[95m'

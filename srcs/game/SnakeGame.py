@@ -9,7 +9,7 @@ from .GameState import GameState
 from ..display.display import print_state
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
-                     R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION
+                     R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION, HEIGHT
 
 
 class SnakeGame:
@@ -21,17 +21,19 @@ class SnakeGame:
                  train: bool,
                  step_by_step: bool,
                  is_ai_control: bool,
+                 debug: bool,
                  surface=None):
 
         self.save = save
         self.model = model
-        self.training = train
         self.snakeAgent = SnakeAgent(training=train, model=self.model)
         self.gameState = GameState(
             is_ai_control,
             step_by_step,
             episode,
-            visual)
+            visual,
+            debug,
+            train)
         self.interpreter = Interpreter()
 
         self.surface = surface
@@ -60,7 +62,7 @@ class SnakeGame:
         reward = self.reward()
         next_state = self.get_state()
         
-        if self.training:
+        if self.gameState.training:
             self.snakeAgent.update(state, action, reward, next_state, self.gameState.gameover)
             self.snakeAgent.learn()
         self.gameState.step += 1
@@ -150,7 +152,7 @@ class SnakeGame:
                 return R_COLLISION
             self.snake.pop()
             self.change_fruit_pos(self.red_fruits)
-        elif reward == 0:
+        else:
             self.snake.pop()
         return reward
 
@@ -180,7 +182,17 @@ class SnakeGame:
         GameDraw.draw_fruits(self.surface, self.red_fruits,
                              Col.RED_FRUIT_COLOR)
         GameDraw.draw_length(self.surface, len(self.snake))
-        GameDraw.draw_value(self.surface, "episode", self.episode, 10)
-        GameDraw.draw_value(self.surface, "max length", self.gameState.max_length, 30)
-        GameDraw.draw_value(self.surface, "step", self.gameState.step, 50)
+        GameDraw.draw_stat(self.surface, "Episode", self.episode, 10)
+        GameDraw.draw_stat(self.surface, "Max length", self.gameState.max_length, 30)
+        GameDraw.draw_stat(self.surface, "Step", self.gameState.step, 50)
+
+        GameDraw.draw_stat(self.surface, "Training", self.gameState.training, HEIGHT - 20)
+        GameDraw.draw_stat(self.surface, "[A] AI", self.gameState.is_ai_control, HEIGHT - 40)
+        GameDraw.draw_stat(self.surface, "[P] Step-by-step", self.gameState.step_by_step, HEIGHT - 60)
+
+        if self.gameState.is_ai_control and self.gameState.step_by_step:
+            GameDraw.draw_info(self.surface, "[SPACE] Next AI step")
+        elif not self.gameState.is_ai_control:
+            GameDraw.draw_info(self.surface, "Use ARROWS to move")
+
         pg.display.flip()

@@ -4,6 +4,9 @@ from settings import WIDTH, HEIGHT
 import pygame as pg
 import argparse
 
+class ArgError(Exception):
+    pass
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode",
@@ -18,6 +21,7 @@ def parse_arguments():
                                  action="store_true")
     parser.add_argument("-step-by-step", action="store_true")
     parser.add_argument("-p", "--player", action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true")
     
     return parser.parse_args()
 
@@ -31,6 +35,10 @@ def main():
 
         surface = None
         is_ai_control = True if args.player == False else False
+        if args.visual == "off" and args.step_by_step:
+            raise ArgError("Can't off visual and play in step-by-step")
+        if args.visual == "off" and args.player:
+            raise ArgError("Can't off visual and use player commands")
         if args.visual == "on":
             surface = init_pygame()
             pg.display.set_caption('Learn2Slither')
@@ -41,6 +49,7 @@ def main():
                         train=args.train,
                         step_by_step=args.step_by_step,
                         is_ai_control=is_ai_control,
+                        debug=args.debug,
                         surface=surface)
         game.run()
     except AssertionError as e:

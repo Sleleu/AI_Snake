@@ -1,6 +1,6 @@
 import pygame as pg
 from ..display.Colors import Colors as Col
-from settings import CELL_SIZE, MARGIN, WIDTH
+from settings import CELL_SIZE, MARGIN, WIDTH, HEIGHT
 
 
 class GameDraw:
@@ -57,18 +57,40 @@ class GameDraw:
     def draw_length(surface, length):
         font = pg.font.Font(None, 36)
 
-        length_text = font.render(f"length: {length}",
+        length_text = font.render(f"Length: {length}",
                                   True,
-                                  Col.GRID_COLOR_EVEN)
+                                  Col.TEXT_CYAN)
         length_rect = length_text.get_rect(center=(WIDTH // 2, MARGIN // 2))
         surface.blit(length_text, length_rect)
 
     @staticmethod
-    def draw_value(surface, key, value, top):
+    def draw_info(surface, info):
         font = pg.font.Font(None, 26)
 
-        length_text = font.render(f"{key}: {value}",
+        length_text = font.render(f"{info}",
                                   True,
                                   Col.TEXT_COLOR)
-        length_rect = length_text.get_rect(topleft=(10, top))
+        length_rect = length_text.get_rect(
+            center=(WIDTH // 2, MARGIN // 2),
+            top=(HEIGHT - 40),
+            )
         surface.blit(length_text, length_rect)
+
+    @staticmethod
+    def draw_stat(surface, key, value, top):
+        font = pg.font.Font(None, 24)
+
+        key_text = font.render(f"{key}: ", True, Col.TEXT_COLOR)
+        
+        if isinstance(value, bool):
+            status_text = "ON" if value else "OFF"
+            status_color = Col.TEXT_GREEN if value else Col.TEXT_RED
+        else:
+            status_text = str(value)
+            status_color = Col.TEXT_CYAN
+        value_text = font.render(status_text, True, status_color)
+    
+        key_rect = key_text.get_rect(top=top, left=5)
+        value_rect = value_text.get_rect(top=top, left=key_rect.right)
+        surface.blit(key_text, key_rect)
+        surface.blit(value_text, value_rect)

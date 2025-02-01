@@ -12,15 +12,9 @@ class EventHandler:
                 case pg.K_s:
                     snakeAgent.save_model("manual_save.pt")
                     print("Model saved as 'manual_save.pt'")
-                case pg.K_p:
-                    snakeAgent.epsilon += 0.05
-                    print(snakeAgent.epsilon)
-                case pg.K_m:
-                    snakeAgent.epsilon -= 0.05
-                    print(snakeAgent.epsilon)
                 case pg.K_a:
                     gameState.toggle_ai()
-                case pg.K_t:
+                case pg.K_p:
                     gameState.toggle_step_by_step()
                 case pg.K_SPACE:
                     return False, "step"
