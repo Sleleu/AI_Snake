@@ -6,7 +6,7 @@ from .Spawner import Spawner
 from ..agent.Interpreter import Interpreter
 from .EventHandler import EventHandler
 from .GameState import GameState
-from ..display.display import print_state
+from ..display.display import print_state, print_experience
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
                      R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION, HEIGHT
@@ -50,10 +50,16 @@ class SnakeGame:
                 break
             self.save = "save"
             self.gameStats.get_stats(self)
-            self.episode += 1  
+            self.episode += 1
+            if (self.episode == 10
+                or self.episode == 50
+                or self.episode == 100):
+                self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
+            if self.episode % 400 == 0:
+                self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
 
     def episode_step(self, state):
-        action = self.snakeAgent.get_action(state)
+        action = self.snakeAgent.get_action(state, self.gameState.debug)
         
         if self.gameState.is_ai_control:
             self.change_direction(action)
@@ -61,6 +67,9 @@ class SnakeGame:
         
         reward = self.reward()
         next_state = self.get_state()
+        
+        if self.gameState.debug:
+            print_experience(state, action, reward, self.gameState.gameover)
         
         if self.gameState.training:
             self.snakeAgent.update(state, action, reward, next_state, self.gameState.gameover)
