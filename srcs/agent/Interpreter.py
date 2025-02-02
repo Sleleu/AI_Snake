@@ -29,6 +29,13 @@ class Interpreter:
 
         directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
         state = []
+        y, x = snake_head
+        direct_collisions = [
+            1 if (y-1 < 0 or [y-1, x] in snake_body[1:]) else 0,
+            1 if (y+1 >= GRID_SIZE or [y+1, x] in snake_body[1:]) else 0,
+            1 if (x-1 < 0 or [y, x-1] in snake_body[1:]) else 0,
+            1 if (x+1 >= GRID_SIZE or [y, x+1] in snake_body[1:]) else 0
+        ]
         
         for direction in directions:
             state.append(get_collision_dist(direction))
@@ -38,6 +45,7 @@ class Interpreter:
             state.append(get_item_dist(direction, red_fruits))
         for direction in directions:
             state.append(get_item_dist(direction, snake_body[1:]))
+        state.extend(direct_collisions)
         return state
 
     @staticmethod

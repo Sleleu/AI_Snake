@@ -59,12 +59,12 @@ class SnakeAgent:
         self.batch_size = 1000
 
         # Q-Network
-        self.model = QNetwork(16, 64, 4)
+        self.model = QNetwork(20, 128, 4)
         
         self.training = training
         if self.training:
             # Target-Network
-            self.target_model = QNetwork(16, 64, 4)
+            self.target_model = QNetwork(20, 128, 4)
             # We copy initial weights/bias
             self.target_model.load_state_dict(self.model.state_dict())
             self.target_update_freq = 2000
