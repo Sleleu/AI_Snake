@@ -2,7 +2,8 @@ from settings import R_COLLISION, R_GREEN_FRUIT, R_RED_FRUIT, GRID_SIZE
 
 class Interpreter:
     @staticmethod
-    def get_state(snake_head, snake_body, green_fruits, red_fruits) -> list:
+    def get_state(snake, green_fruits, red_fruits) -> list:
+        snake_head = snake[0]
         def get_collision_dist(direction):
             y, x = snake_head
             dy, dx = direction
@@ -31,10 +32,10 @@ class Interpreter:
         state = []
         y, x = snake_head
         direct_collisions = [
-            1 if (y-1 < 0 or [y-1, x] in snake_body[1:]) else 0,
-            1 if (y+1 >= GRID_SIZE or [y+1, x] in snake_body[1:]) else 0,
-            1 if (x-1 < 0 or [y, x-1] in snake_body[1:]) else 0,
-            1 if (x+1 >= GRID_SIZE or [y, x+1] in snake_body[1:]) else 0
+            1 if (y-1 < 0 or [y-1, x] in snake[1:]) else 0,
+            1 if (y+1 >= GRID_SIZE or [y+1, x] in snake[1:]) else 0,
+            1 if (x-1 < 0 or [y, x-1] in snake[1:]) else 0,
+            1 if (x+1 >= GRID_SIZE or [y, x+1] in snake[1:]) else 0
         ]
         
         for direction in directions:
@@ -44,7 +45,7 @@ class Interpreter:
         for direction in directions:
             state.append(get_item_dist(direction, red_fruits))
         for direction in directions:
-            state.append(get_item_dist(direction, snake_body[1:]))
+            state.append(get_item_dist(direction, snake[1:]))
         state.extend(direct_collisions)
         return state
 

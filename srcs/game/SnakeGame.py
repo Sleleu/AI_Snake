@@ -1,6 +1,5 @@
 import pygame as pg
-from ..display.Colors import Colors as Col
-from .GameDraw import GameDraw
+from ..display.GameDraw import GameDraw
 from ..agent.SnakeAgent import SnakeAgent
 from .Spawner import Spawner
 from ..agent.Interpreter import Interpreter
@@ -104,7 +103,14 @@ class SnakeGame:
         state = self.get_state()
 
         if self.gameState.visual:
-            self.draw_game()
+            GameDraw.draw_game(
+                surface=self.surface,
+                gameState=self.gameState,
+                snake=self.snake,
+                green_fruits=self.green_fruits,
+                red_fruits=self.red_fruits,
+                episode=self.episode,
+                snakeAgent=self.snakeAgent)
             self.clock.tick(FPS)
         
         while not self.gameState.gameover:
@@ -120,7 +126,14 @@ class SnakeGame:
                 state = self.episode_step(state)
 
             if self.gameState.visual:
-                self.draw_game()
+                GameDraw.draw_game(
+                    surface=self.surface,
+                    gameState=self.gameState,
+                    snake=self.snake,
+                    green_fruits=self.green_fruits,
+                    red_fruits=self.red_fruits,
+                    episode=self.episode,
+                    snakeAgent=self.snakeAgent)
                 self.clock.tick(FPS)
         
         self.gameState.update(len(self.snake))
@@ -129,7 +142,6 @@ class SnakeGame:
     
     def get_state(self) -> list:
         return self.interpreter.get_state(
-            self.snake_head,
             self.snake,
             self.green_fruits,
             self.red_fruits
@@ -181,27 +193,3 @@ class SnakeGame:
                 self.direction = "LEFT"
             case 3:
                 self.direction = "RIGHT"
-
-    def draw_game(self):
-        self.surface.fill(Col.BG_COLOR)
-        GameDraw.draw_grid(self.surface, GRID_SIZE)
-        GameDraw.draw_snake(self.surface, self.snake)
-        GameDraw.draw_fruits(self.surface, self.green_fruits,
-                             Col.GREEN_FRUIT_COLOR)
-        GameDraw.draw_fruits(self.surface, self.red_fruits,
-                             Col.RED_FRUIT_COLOR)
-        GameDraw.draw_length(self.surface, len(self.snake))
-        GameDraw.draw_stat(self.surface, "Episode", self.episode, 10)
-        GameDraw.draw_stat(self.surface, "Max length", self.gameState.max_length, 30)
-        GameDraw.draw_stat(self.surface, "Step", self.gameState.step, 50)
-
-        GameDraw.draw_stat(self.surface, "Training", self.gameState.training, HEIGHT - 20)
-        GameDraw.draw_stat(self.surface, "[A] AI", self.gameState.is_ai_control, HEIGHT - 40)
-        GameDraw.draw_stat(self.surface, "[P] Step-by-step", self.gameState.step_by_step, HEIGHT - 60)
-
-        if self.gameState.is_ai_control and self.gameState.step_by_step:
-            GameDraw.draw_info(self.surface, "[SPACE] Next AI step")
-        elif not self.gameState.is_ai_control:
-            GameDraw.draw_info(self.surface, "Use ARROWS to move")
-
-        pg.display.flip()

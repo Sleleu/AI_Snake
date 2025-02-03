@@ -5,7 +5,7 @@ class Spawner:
 
     @staticmethod
     def snake_spawn(snake_size, grid_size, directions: dict[str, tuple]):
-        if snake_size >= grid_size:
+        if snake_size > grid_size:
             raise AssertionError("Snake can't be greater than grid size")
 
         while True:

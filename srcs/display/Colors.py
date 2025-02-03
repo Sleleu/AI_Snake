@@ -10,10 +10,13 @@ class Colors:
     SNAKE_HEAD_COLOR = pg.Color((113, 28, 145))
     GREEN_FRUIT_COLOR = pg.Color((0, 255, 0))
     RED_FRUIT_COLOR = pg.Color((255, 0, 0))
-    TEXT_COLOR = pg.Color('white')
-    TEXT_RED = pg.Color('red')
-    TEXT_GREEN = pg.Color('green')
-    TEXT_CYAN = pg.Color('cyan')
+
+    PG_WHITE = pg.Color('white')
+    PG_RED = pg.Color('red')
+    PG_GREEN = pg.Color('green')
+    PG_CYAN = pg.Color('cyan')
+    PG_MAGENTA = pg.Color('magenta')
+    PG_YELLOW = pg.Color('yellow')
 
     # ASCII colors
     MAGENTA = '\033[95m'

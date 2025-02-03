@@ -88,6 +88,11 @@ class SnakeAgent:
                 print(f"Index delected: {q_values.argmax().item()}")
             return q_values.argmax().item()
 
+    def get_action_values(self, state)-> list:
+        """Return Qvalues of the current state"""
+        with torch.no_grad():
+            return self.model(state).tolist()
+
     def learn(self):
         if len(self.memory) < self.batch_size:
             return
