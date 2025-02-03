@@ -5,6 +5,7 @@ from .Spawner import Spawner
 from ..agent.Interpreter import Interpreter
 from .EventHandler import EventHandler
 from .GameState import GameState
+from ..display.Colors import Colors as Col
 from ..display.display import print_experience
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
@@ -39,24 +40,39 @@ class SnakeGame:
         if self.gameState.visual:
             self.clock = pg.time.Clock()
 
+        if episode < 100:
+            self.print_frequency = 10
+        elif episode > 5000:
+            self.print_frequency = max(episode // 200, 1)
+        else:
+            self.print_frequency = max(episode // 10, 1)
+
     def run(self) -> None:
         """Run multiple game episodes."""
         self.episode = 0
-        from ..display.GameStats import GameStats
-        self.gameStats = GameStats()
         for _ in range(self.gameState.episode_nb):
             is_continue = self.run_episode()
             if not is_continue:
                 break
-            self.save = "save"
-            self.gameStats.get_stats(self)
+
             self.episode += 1
-            if (self.episode == 10
-                    or self.episode == 50
-                    or self.episode == 100):
-                self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
-            if self.episode % 400 == 0:
-                self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
+
+            # Print statistics
+            if self.episode % self.print_frequency == 0:
+                self.gameState.print_periodic_stats(self.print_frequency)
+
+            # Plot stats every 100 episodes
+            if self.save and self.episode % 100 == 0:
+                self.gameState.plot_statistics(self.save)
+
+            # Autosave model
+            if (self.episode in [10, 50, 100] or 
+                self.episode % 500 == 0):
+                path = f"model/{self.episode}_ep.pt"
+                self.snakeAgent.save_model(path)
+                print(f"Model autosave: {Col.GREEN}'{path}'{Col.END}")
+        
+        self.gameState.print_periodic_stats(self.episode)
 
     def episode_step(self, state: list) -> list:
         """Execute one step of an episode.
@@ -161,7 +177,8 @@ class SnakeGame:
                     snakeAgent=self.snakeAgent)
                 self.clock.tick(FPS)
 
-        self.gameState.update(len(self.snake))
+        self.gameState.update(len(self.snake),
+                              self.snakeAgent.epsilon)
 
         return True
 
