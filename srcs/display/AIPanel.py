@@ -1,22 +1,29 @@
 from .Colors import Colors as Col
-from settings import *
+from settings import WIDTH, MARGIN, HEIGHT
 import pygame as pg
 
 
 class AIPanel:
+    """Panel for visualizing the AI's neural network and game state.
+
+    Contains methods to draw:
+    - State panel showing current input values
+    - Neural network visualization with connections and activations
+    - Gradients for neuron activation values
+    """
     # State panel const
     STATE_PANEL_WIDTH = 310
     STATE_PANEL_HEIGHT = 200
     STATE_ROW_HEIGHT = 30
     STATE_DIR_WIDTH = 60
-    
+
     # Neural network const
     NN_WIDTH = 475
-    NN_HEIGHT = min(HEIGHT - 250, 400) 
+    NN_HEIGHT = min(HEIGHT - 230, 400)
     NN_LAYER_SPACING = 100
     NN_INPUT_SPACING = 15
     NN_OUTPUT_SPACING = None
-    
+
     # Other
     CATEGORIES = ["Wall", "Green fruit", "Red fruit", "Body", "Collisions"]
     DIRECTIONS = ["TOP", "BOTTOM", "LEFT", "RIGHT"]
@@ -29,9 +36,18 @@ class AIPanel:
     ]
 
     @classmethod
-    def get_gradient_color(cls, value, category=None):
+    def get_gradient_color(cls, value: float, category: int = None) -> tuple:
+        """Return gradient color based on value and optional category.
+
+        Args:
+            `value`: Value between 0-1 to determine color intensity
+            `category`: Optional category index for base color selection
+
+        Returns:
+            `tuple`: RGB color values (r,g,b)
+        """
         value = max(0, min(1, value))
-        
+
         # For output neuron
         if category is None:
             threshold = 0.5
@@ -44,15 +60,23 @@ class AIPanel:
 
         base_color = cls.BASE_COLORS[category]
         inactive = tuple(min(255, int(c * 1.3)) for c in Col.BG_COLOR)
-        if category < 4: # inverse color for distance neurons
+        if category < 4:  # inverse color for distance neurons
             value = 1 - value
-        value = max(0.15, min(1, value)) # brighter to see inactive neurons
+        value = max(0.15, min(1, value))  # brighter to see inactive neurons
 
         return tuple(int(c1 * value + c2 * (1 - value))
                      for c1, c2 in zip(base_color, inactive))
 
     @classmethod
     def draw_panel_background(cls, surface, x, y, width, height, title):
+        """Draw panel background with border and title.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Top-left position
+            `width`, `height`: Panel dimensions
+            `title`: Panel title text
+        """
         # Border
         panel_rect = pg.Rect(x, y, width, height)
         pg.draw.rect(surface, Col.PG_WHITE, panel_rect, 1)
@@ -68,6 +92,12 @@ class AIPanel:
 
     @classmethod
     def draw_state_direction(cls, surface, x, y):
+        """Draw direction labels for state panel.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Starting position for drawing
+        """
         small_font = pg.font.Font(None, 16)
         for i, direction in enumerate(cls.DIRECTIONS):
             text = small_font.render(direction, True, Col.PG_CYAN)
@@ -79,8 +109,18 @@ class AIPanel:
 
     @classmethod
     def draw_state_category(cls, surface, x, y, row, category, values, is_ai):
+        """Draw a category row in the state panel.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Starting position
+            `row`: Row index
+            `category`: Category name
+            `values`: State values to display
+            `is_ai`: Whether AI control is active
+        """
         small_font = pg.font.Font(None, 16)
-        
+
         # Category name
         cat_text = small_font.render(category, True, cls.BASE_COLORS[row])
         cat_rect = cat_text.get_rect(left=x + 10, top=y)
@@ -90,22 +130,32 @@ class AIPanel:
         for col in range(len(cls.DIRECTIONS)):
             value = values[row * 4 + col]
             pos_x = x + 80 + col * cls.STATE_DIR_WIDTH
-            
-            color = (cls.get_gradient_color(value, row) 
-                    if is_ai else Col.PG_RED)
+
+            color = (cls.get_gradient_color(value, row)
+                     if is_ai else Col.PG_RED)
             pg.draw.circle(surface, color, (pos_x + 10, y + 8), 8)
 
             # Print ':.2f' if distance or 1/0 for collision
             format_str = "{}" if row == 4 else "{:.2f}"
 
-            text = small_font.render(format_str.format(value), True, Col.PG_WHITE)
+            text = small_font.render(
+                format_str.format(value),
+                True,
+                Col.PG_WHITE)
             surface.blit(text, text.get_rect(left=pos_x + 20, top=y))
 
     @classmethod
     def draw_neural_state(cls, surface, state, is_ai_control):
+        """Draw the complete state panel.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `state`: Current state vector
+            `is_ai_control`: Whether AI is controlling the snake
+        """
         panel_x = WIDTH - MARGIN * 5
         panel_y = 0
-        
+
         # Only 0 values if player (AI brain off)
         if not is_ai_control:
             state = [0] * len(state)
@@ -129,70 +179,115 @@ class AIPanel:
 
     @classmethod
     def draw_input_layer(cls, surface, x, y, state, is_ai):
+        """Draw input layer neurons with activation values.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Starting position
+            `state`: Input state values
+            `is_ai`: Whether AI control is active
+
+        Returns:
+            `list`: List of neuron positions for drawing connections
+        """
         neurons = []
         for i, value in enumerate(state):
             pos_y = y + (i * cls.NN_INPUT_SPACING)
             category_index = i // 4
             color = (cls.get_gradient_color(value, category_index)
-                    if is_ai else Col.PG_RED)
+                     if is_ai else Col.PG_RED)
             pg.draw.circle(surface, color, (x, pos_y), 6)
             neurons.append((x + 2, pos_y))
         return neurons
 
     @classmethod
     def draw_hidden_layers(cls, surface, x, y, height):
+        """Draw hidden layer representations.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Starting position
+            `height`: Available height
+
+        Returns:
+            `int`: X position of last hidden layer
+        """
         font = pg.font.Font(None, 24)
-        
+
         # First hidden layer
         text = font.render("Hidden (128)", True, Col.PG_WHITE)
         text_rotate = pg.transform.rotate(text, -90)
-        surface.blit(text_rotate, text_rotate.get_rect(center=(x, y + height//2)))
-        
+        surface.blit(text_rotate,
+                     text_rotate.get_rect(center=(x, y + height//2)))
+
         # Second hidden layer
         x2 = x + cls.NN_LAYER_SPACING
         text = font.render("Hidden (64)", True, Col.PG_WHITE)
         text_rotate = pg.transform.rotate(text, -90)
-        surface.blit(text_rotate, text_rotate.get_rect(center=(x2, y + height//2)))
-        
+        surface.blit(text_rotate,
+                     text_rotate.get_rect(center=(x2, y + height//2)))
+
         # Border of hidden layers
         for layer_x in (x, x2):
             rect = pg.Rect(layer_x - 20, y + 60, 40, height - 120)
             pg.draw.rect(surface, Col.PG_CYAN, rect, 1)
-            
+
         return x2
 
     @classmethod
     def draw_output_layer(cls, surface, x, y, height, values, is_ai):
+        """Draw output layer with Q-values.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `x`, `y`: Starting position
+            `height`: Available height
+            `values`: Q-values for each action
+            `is_ai`: Whether AI control is active
+
+        Returns:
+            `list`: List of output neuron positions
+        """
         small_font = pg.font.Font(None, 20)
         output_start_y = y + height//2 - (height // 6)
         neurons = []
-        
+
         max_val = max(values) if values else 0
-        
+
         for i, (action, value) in enumerate(zip(cls.DIRECTIONS, values)):
             pos_y = output_start_y + (i * (height // 6))
-            
+
             # To protect from division by 0
             norm_val = value / max_val if max_val > 0 else 0
 
             color = (cls.get_gradient_color(norm_val, None)
-                    if is_ai else Col.PG_RED)
+                     if is_ai else Col.PG_RED)
             pg.draw.circle(surface, color, (x, pos_y), 8)
             neurons.append((x, pos_y))
 
             text_color = Col.PG_WHITE
             if value == max(values):
                 text_color = Col.PG_CYAN
-            text = small_font.render(f"{action}: {value:.2f}", True, text_color)
+            text = small_font.render(f"{action}: {value:.2f}",
+                                     True,
+                                     text_color)
             surface.blit(text, text.get_rect(left=x + 15, centery=pos_y))
-            
+
         return neurons
 
     @classmethod
     def draw_neural_network(cls, surface, state, action_values, is_ai_control):
+        """Draw complete neural network visualization.
+
+        Args:
+            `surface`: Pygame surface to draw on
+            `state`: Current state vector for input layer
+            `action_values`: Q-values for output layer
+            `is_ai_control`: Whether AI is controlling the snake
+        """
         nn_x = WIDTH - MARGIN * 5
         nn_y = 220
-        
+
         if not is_ai_control:
             action_values = [0] * len(action_values)
 
@@ -224,13 +319,13 @@ class AIPanel:
         mid_y = nn_y + cls.NN_HEIGHT//2
         for in_pos in input_neurons:
             pg.draw.line(surface, Col.PG_CYAN, in_pos,
-                        (hidden1_x - 20, mid_y), 1)
-        
+                         (hidden1_x - 20, mid_y), 1)
+
         pg.draw.line(surface, Col.PG_CYAN,
-                    (hidden1_x + 20, mid_y),
-                    (hidden2_x - 20, mid_y), 1)
-        
+                     (hidden1_x + 20, mid_y),
+                     (hidden2_x - 20, mid_y), 1)
+
         for out_pos in output_neurons:
             pg.draw.line(surface, Col.PG_CYAN,
-                        (hidden2_x + 20, mid_y),
-                        (out_pos[0] - 8, out_pos[1]), 2)
+                         (hidden2_x + 20, mid_y),
+                         (out_pos[0] - 8, out_pos[1]), 2)

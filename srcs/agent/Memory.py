@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+
 class Memory:
     """Experience replay buffer using numpy arrays.
 
