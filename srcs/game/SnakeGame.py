@@ -72,7 +72,6 @@ class SnakeGame:
         
         if self.gameState.training:
             self.snakeAgent.update(state, action, reward, next_state, self.gameState.gameover)
-            self.snakeAgent.learn()
         self.gameState.step += 1
         return next_state
 
