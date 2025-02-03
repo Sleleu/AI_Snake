@@ -94,7 +94,7 @@ class GameDraw:
         pg.display.flip()
 
     def draw_grid(surface: pg.Surface) -> None:
-        """Draw checkered game grid.
+        """Draw game grid.
 
         Args:
             `surface`: Pygame surface to draw on
@@ -191,8 +191,8 @@ class GameDraw:
 
         Args:
             `surface`: Pygame surface to draw on
-            `key`: Stat name/key
-            `value`: Value to display (bool or numeric)
+            `key`: Stat name
+            `value`: Value to display
             `top`: Vertical position
         """
         font = pg.font.Font(None, 24)

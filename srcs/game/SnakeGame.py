@@ -5,13 +5,14 @@ from .Spawner import Spawner
 from ..agent.Interpreter import Interpreter
 from .EventHandler import EventHandler
 from .GameState import GameState
-from ..display.display import print_state, print_experience
+from ..display.display import print_experience
 from settings import GRID_SIZE, FPS, GREEN_FRUITS_NB, \
                      RED_FRUITS_NB, SNAKE_SIZE, \
-                     R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION, HEIGHT
+                     R_GREEN_FRUIT, R_RED_FRUIT, R_COLLISION
 
 
 class SnakeGame:
+    """Main game class handling snake logic and game loop."""
     def __init__(self,
                  episode: int,
                  visual: str,
@@ -26,20 +27,20 @@ class SnakeGame:
         self.save = save
         self.model = model
         self.snakeAgent = SnakeAgent(training=train, model=self.model)
-        self.gameState = GameState(
-            is_ai_control,
-            step_by_step,
-            episode,
-            visual,
-            debug,
-            train)
+        self.gameState = GameState(is_ai_control,
+                                   step_by_step,
+                                   episode,
+                                   visual,
+                                   debug,
+                                   train)
         self.interpreter = Interpreter()
 
         self.surface = surface
         if self.gameState.visual:
             self.clock = pg.time.Clock()
 
-    def run(self):
+    def run(self) -> None:
+        """Run multiple game episodes."""
         self.episode = 0
         from ..display.GameStats import GameStats
         self.gameStats = GameStats()
@@ -51,31 +52,45 @@ class SnakeGame:
             self.gameStats.get_stats(self)
             self.episode += 1
             if (self.episode == 10
-                or self.episode == 50
-                or self.episode == 100):
+                    or self.episode == 50
+                    or self.episode == 100):
                 self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
             if self.episode % 400 == 0:
                 self.snakeAgent.save_model(f"model/{self.episode}_ep.pt")
 
-    def episode_step(self, state):
+    def episode_step(self, state: list) -> list:
+        """Execute one step of an episode.
+
+        Args:
+            `state`: Current game state vector
+
+        Returns:
+            `list`: Next state vector after action
+        """
         action = self.snakeAgent.get_action(state, self.gameState.debug)
-        
+
         if self.gameState.is_ai_control:
             self.change_direction(action)
         self.move_snake()
-        
+
         reward = self.reward()
         next_state = self.get_state()
-        
+
         if self.gameState.debug:
             print_experience(state, action, reward, self.gameState.gameover)
-        
+
         if self.gameState.training:
-            self.snakeAgent.update(state, action, reward, next_state, self.gameState.gameover)
+            self.snakeAgent.update(state,
+                                   action,
+                                   reward,
+                                   next_state,
+                                   self.gameState.gameover
+                                   )
         self.gameState.step += 1
         return next_state
 
-    def spawn_fruits(self):
+    def spawn_fruits(self) -> None:
+        """Spawn initial green and red fruits."""
         self.green_fruits = []
         self.red_fruits = []
         for _ in range(GREEN_FRUITS_NB):
@@ -85,18 +100,29 @@ class SnakeGame:
         for _ in range(RED_FRUITS_NB):
             self.red_fruits.append(
                 Spawner.fruit_spawn(self.snake, self.green_fruits,
-                                    self.red_fruits, GRID_SIZE))   
+                                    self.red_fruits, GRID_SIZE))
 
-    def init_episode(self):
-        self.actions = {"TOP": (-1, 0), "BOTTOM": (1, 0), "LEFT": (0, -1), "RIGHT": (0, 1)}
-        
-        self.snake, self.direction = Spawner.snake_spawn(SNAKE_SIZE, GRID_SIZE, self.actions)
+    def init_episode(self) -> None:
+        """Initialize snake and direction for new episode."""
+        self.actions = {"TOP": (-1, 0),
+                        "BOTTOM": (1, 0),
+                        "LEFT": (0, -1),
+                        "RIGHT": (0, 1)}
+
+        self.snake, self.direction = Spawner.snake_spawn(SNAKE_SIZE,
+                                                         GRID_SIZE,
+                                                         self.actions)
         fruits_nb = RED_FRUITS_NB + GREEN_FRUITS_NB
         if fruits_nb >= (GRID_SIZE**2 - len(self.snake)):
             raise AssertionError("Not enough place to spawn fruits")
         self.snake_head = self.snake[0]
 
-    def run_episode(self):
+    def run_episode(self) -> bool:
+        """Run a single game episode.
+
+        Returns:
+            `bool`: False if game quit, True otherwise
+        """
         self.init_episode()
         self.spawn_fruits()
         state = self.get_state()
@@ -111,12 +137,12 @@ class SnakeGame:
                 episode=self.episode,
                 snakeAgent=self.snakeAgent)
             self.clock.tick(FPS)
-        
+
         while not self.gameState.gameover:
             quit_game, step_move = EventHandler.handle(
                 self.gameState,
                 self.snakeAgent,
-                self.change_direction, 
+                self.change_direction,
             )
             if quit_game:
                 return False
@@ -134,19 +160,25 @@ class SnakeGame:
                     episode=self.episode,
                     snakeAgent=self.snakeAgent)
                 self.clock.tick(FPS)
-        
+
         self.gameState.update(len(self.snake))
-            
+
         return True
-    
+
     def get_state(self) -> list:
+        """Get current state from interpreter."""
         return self.interpreter.get_state(
             self.snake,
             self.green_fruits,
             self.red_fruits
         )
 
-    def change_fruit_pos(self, fruit_lst):
+    def change_fruit_pos(self, fruit_lst: list[list]) -> None:
+        """Update position of eaten fruit.
+
+        Args:
+            `fruit_lst`: List of fruits to update
+        """
         fruit_lst.remove(self.snake_head)
         new_fruit = Spawner.fruit_spawn(self.snake, self.green_fruits,
                                         self.red_fruits, GRID_SIZE)
@@ -154,6 +186,11 @@ class SnakeGame:
             fruit_lst.append(new_fruit)
 
     def reward(self) -> float:
+        """Calculate reward for current step.
+
+        Returns:
+            `float`: Reward value based on game events
+        """
         reward, self.gameState.gameover = self.interpreter.get_reward(
             self.snake_head,
             self.snake,
@@ -176,13 +213,19 @@ class SnakeGame:
             self.snake.pop()
         return reward
 
-    def move_snake(self):
+    def move_snake(self) -> None:
+        """Update snake position based on current direction."""
         new_head = [h + a for h, a in zip(self.snake_head,
                                           self.actions[self.direction])]
         self.snake.insert(0, new_head)
         self.snake_head = self.snake[0]
 
-    def change_direction(self, key):
+    def change_direction(self, key: int) -> None:
+        """Change snake direction based on action.
+
+        Args:
+            `key`: Direction code (0:TOP, 1:BOTTOM, 2:LEFT, 3:RIGHT)
+        """
         match key:
             case 0:
                 self.direction = "TOP"
