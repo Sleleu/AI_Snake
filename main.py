@@ -12,18 +12,26 @@ class ArgError(Exception):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode",
-                        type=int, default=10)
+                        type=int, default=10,
+                        help="Number of episodes to run.")
     parser.add_argument("-v", "--visual",
-                        type=str, choices=("on", "off"), default="on")
-    parser.add_argument("-s", "--save",
-                        type=str, default=None)
+                        type=str, choices=("on", "off"), default="on",
+                        help="Enable or disable game GUI. Default 'on'.")
+    parser.add_argument("-plot",
+                        type=str, default=None,
+                        help="Filename to save statistics plots.")
     parser.add_argument("-m", "--model",
-                        type=str, default=None)
+                        type=str, default=None,
+                        help="Path to a pre-trained model to load.")
     parser.add_argument("-t", "--train",
-                        action="store_true")
-    parser.add_argument("-step-by-step", action="store_true")
-    parser.add_argument("-p", "--player", action="store_true")
-    parser.add_argument("-d", "--debug", action="store_true")
+                        action="store_true",
+                        help="Enable training mode.")
+    parser.add_argument("-step-by-step", action="store_true",
+                        help="Enable step-by-step mode.")
+    parser.add_argument("-p", "--player", action="store_true",
+                        help="Enable player mode.")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Enable debug mode.")
 
     return parser.parse_args()
 
@@ -34,6 +42,7 @@ def init_pygame():
 
 
 def main():
+    args = None
     try:
         args = parse_arguments()
 
@@ -47,7 +56,7 @@ def main():
             pg.display.set_caption('Learn2Slither')
         game = SnakeGame(episode=args.episode,
                          visual=args.visual,
-                         save=args.save,
+                         plot=args.plot,
                          model=args.model,
                          train=args.train,
                          step_by_step=args.step_by_step,
@@ -62,7 +71,7 @@ def main():
         print(f"{Col.RED}{Col.BOLD}{e.__class__.__name__}: {e}{Col.END}")
         exit(1)
     finally:
-        if args.visual == "on":
+        if args is not None and args.visual == "on":
             pg.quit()
 
 

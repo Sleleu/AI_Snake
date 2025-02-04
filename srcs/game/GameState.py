@@ -2,6 +2,8 @@ from ..display.Colors import Colors as Col
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
 
 class GameState:
     """Manages the game's state and control settings.
@@ -70,7 +72,7 @@ class GameState:
         if snake_len > self.max_length:
             self.max_length = snake_len
         self.records.append(self.max_length)
-        
+
         self.step = 0
         self.gameover = False
 
@@ -90,35 +92,40 @@ class GameState:
             print(f"Agent Epsilon: {self.agent_epsilon:.3f}")
         print("=====================================\n")
 
-    def plot_statistics(self, save_path: str) -> None:
+    def plot_statistics(self, plot_path: str) -> None:
         """Generate and save visualization plots of game statistics."""
-        if not save_path:
+        if not plot_path:
             return
+
+        path = os.path.join("plot", plot_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
         # x-axis values for all episodes
         episodes = range(len(self.episode_lengths))
-        
-        # Plot raw episode lengths with some transparency
-        ax1.plot(episodes, self.episode_lengths, label='Length per episode', alpha=0.3)
 
-        # Add moving average if enough episodes have been recorded
+        # Plot raw episode lengths with some transparency
+        ax1.plot(episodes,
+                 self.episode_lengths,
+                 label='Length per episode',
+                 alpha=0.3)
+
         if len(self.episode_lengths) >= self.moving_avg_window:
             moving_avg = self.calculate_moving_average()
-            # Plot starts from moving_avg_window-1 to align with corresponding episodes
-            ax1.plot(episodes[self.moving_avg_window-1:],
-                    moving_avg,
-                    label=f'Moving mean ({self.moving_avg_window} episodes)',
-                    linewidth=2)
 
-        # first subplot appearance
+            ax1.plot(episodes[self.moving_avg_window-1:],
+                     moving_avg,
+                     label=f'Moving mean ({self.moving_avg_window} episodes)',
+                     linewidth=2)
+
+        # subplot 1
         ax1.set_title('Snake length evolution')
         ax1.set_xlabel('Episode')
         ax1.set_ylabel('Length')
         ax1.legend()
 
-        # Second subplot: Record evolution
+        # subplot 2
         ax2.plot(episodes, self.records, label='Record evolution', color='red')
         ax2.set_title('Record evolution')
         ax2.set_xlabel('Episode')
@@ -126,14 +133,17 @@ class GameState:
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig(f"save/{save_path}")
+        plt.savefig(path)
         plt.close()
 
     def calculate_moving_average(self) -> list:
         """Calculate the moving average of episode lengths."""
-        return [np.mean(self.episode_lengths[i-self.moving_avg_window:i])
-                for i in range(self.moving_avg_window, len(self.episode_lengths)+1)]
-
+        result = []
+        for i in range(self.moving_avg_window, len(self.episode_lengths) + 1):
+            window = self.episode_lengths[i - self.moving_avg_window:i]
+            window_average = np.mean(window)
+            result.append(window_average)
+        return result
 
     def toggle_ai(self) -> None:
         """Toggle AI control mode and print debug info."""

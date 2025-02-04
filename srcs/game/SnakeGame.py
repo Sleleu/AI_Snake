@@ -1,4 +1,5 @@
 import pygame as pg
+import os
 from ..display.GameDraw import GameDraw
 from ..agent.SnakeAgent import SnakeAgent
 from .Spawner import Spawner
@@ -17,7 +18,7 @@ class SnakeGame:
     def __init__(self,
                  episode: int,
                  visual: str,
-                 save: str | None,
+                 plot: str | None,
                  model: str | None,
                  train: bool,
                  step_by_step: bool,
@@ -25,7 +26,7 @@ class SnakeGame:
                  debug: bool,
                  surface=None):
 
-        self.save = save
+        self.plot = plot
         self.model = model
         self.snakeAgent = SnakeAgent(training=train, model=self.model)
         self.gameState = GameState(is_ai_control,
@@ -64,17 +65,18 @@ class SnakeGame:
                 self.gameState.print_periodic_stats(self.print_frequency)
 
             # Plot stats every 100 episodes
-            if self.save and self.episode % 100 == 0:
-                self.gameState.plot_statistics(self.save)
+            if self.plot and self.episode % 100 == 0:
+                self.gameState.plot_statistics(self.plot)
 
             # Autosave model
             if self.gameState.training:
-                if (self.episode in [10, 50, 100] or 
-                    self.episode % 2000 == 0):
+                if (self.episode in [10, 50, 100] or
+                        self.episode % 2000 == 0):
                     path = f"model/{self.episode}_ep.pt"
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
                     self.snakeAgent.save_model(path)
                     print(f"Model autosave: {Col.GREEN}'{path}'{Col.END}")
-        
+
         self.gameState.print_periodic_stats(self.episode)
 
     def episode_step(self, state: list) -> list:
