@@ -46,11 +46,13 @@ class SnakeGame:
             self.print_frequency = max(episode // 200, 1)
         else:
             self.print_frequency = max(episode // 10, 1)
+        self.speed = FPS ** 3 if train else FPS
 
     def run(self) -> None:
         """Run multiple game episodes."""
         self.episode = 0
         for _ in range(self.gameState.episode_nb):
+            self.step_no_food = 0
             is_continue = self.run_episode()
             if not is_continue:
                 break
@@ -66,23 +68,17 @@ class SnakeGame:
                 self.gameState.plot_statistics(self.save)
 
             # Autosave model
-            if (self.episode in [10, 50, 100] or 
-                self.episode % 500 == 0):
-                path = f"model/{self.episode}_ep.pt"
-                self.snakeAgent.save_model(path)
-                print(f"Model autosave: {Col.GREEN}'{path}'{Col.END}")
+            if self.gameState.training:
+                if (self.episode in [10, 50, 100] or 
+                    self.episode % 2000 == 0):
+                    path = f"model/{self.episode}_ep.pt"
+                    self.snakeAgent.save_model(path)
+                    print(f"Model autosave: {Col.GREEN}'{path}'{Col.END}")
         
         self.gameState.print_periodic_stats(self.episode)
 
     def episode_step(self, state: list) -> list:
-        """Execute one step of an episode.
-
-        Args:
-            `state`: Current game state vector
-
-        Returns:
-            `list`: Next state vector after action
-        """
+        """Execute one step of an episode."""
         action = self.snakeAgent.get_action(state, self.gameState.debug)
 
         if self.gameState.is_ai_control:
@@ -152,7 +148,7 @@ class SnakeGame:
                 red_fruits=self.red_fruits,
                 episode=self.episode,
                 snakeAgent=self.snakeAgent)
-            self.clock.tick(FPS)
+            self.clock.tick(self.speed)
 
         while not self.gameState.gameover:
             quit_game, step_move = EventHandler.handle(
@@ -175,7 +171,7 @@ class SnakeGame:
                     red_fruits=self.red_fruits,
                     episode=self.episode,
                     snakeAgent=self.snakeAgent)
-                self.clock.tick(FPS)
+                self.clock.tick(self.speed)
 
         self.gameState.update(len(self.snake),
                               self.snakeAgent.epsilon)
@@ -215,11 +211,13 @@ class SnakeGame:
             self.red_fruits
         )
         if reward == R_GREEN_FRUIT:
+            self.step_no_food = 0
             self.change_fruit_pos(self.green_fruits)
             if len(self.snake) >= (GRID_SIZE**2 - (RED_FRUITS_NB)):
                 self.gameState.gameover = True
                 return 100
         elif reward == R_RED_FRUIT:
+            self.step_no_food = 0
             self.snake.pop()
             if len(self.snake) <= 1:
                 self.gameState.gameover = True
@@ -228,6 +226,9 @@ class SnakeGame:
             self.change_fruit_pos(self.red_fruits)
         else:
             self.snake.pop()
+            self.step_no_food += 1
+            if self.step_no_food == GRID_SIZE ** 2:
+                self.gameState.gameover = True
         return reward
 
     def move_snake(self) -> None:

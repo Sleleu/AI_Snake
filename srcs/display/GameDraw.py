@@ -64,17 +64,21 @@ class GameDraw:
 
         # Draw status
         GameDraw.draw_stat(surface,
-                           "Training",
+                           "Training:",
                            gameState.training,
                            HEIGHT - 20)
         GameDraw.draw_stat(surface,
-                           "[A] AI",
+                           "[A] AI:",
                            gameState.is_ai_control,
                            HEIGHT - 40)
         GameDraw.draw_stat(surface,
-                           "[P] Step-by-step",
+                           "[P] Step-by-step:",
                            gameState.step_by_step,
                            HEIGHT - 60)
+        GameDraw.draw_stat(surface,
+                           "[S] Save model",
+                           '',
+                           HEIGHT - 80)
 
         # Draw instructions
         if gameState.is_ai_control and gameState.step_by_step:
@@ -197,7 +201,7 @@ class GameDraw:
         """
         font = pg.font.Font(None, 24)
 
-        key_text = font.render(f"{key}: ", True, Col.PG_WHITE)
+        key_text = font.render(f"{key} ", True, Col.PG_WHITE)
 
         if isinstance(value, bool):
             status_text = "ON" if value else "OFF"

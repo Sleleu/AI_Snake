@@ -76,14 +76,18 @@ class GameState:
 
     def print_periodic_stats(self, print_frequency: int) -> None:
         """Display periodic statistics about the snake performance."""
-        avg_length = np.mean(self.episode_lengths[-100:])
+        if self.episode_lengths:
+            avg_length = np.mean(self.episode_lengths[-100:])
+        else:
+            avg_length = 0
         elapsed_time = datetime.now() - self.start_time
 
         print(f"\n=== Episode stats {self.total_episodes} ===")
         print(f"Time elapsed: {elapsed_time}")
         print(f"Mean Length ({print_frequency} last): {avg_length:.2f}")
         print(f"Length Record: {self.max_length}")
-        print(f"Agent Epsilon: {self.agent_epsilon:.3f}")
+        if hasattr(self, "agent_epsilon"):
+            print(f"Agent Epsilon: {self.agent_epsilon:.3f}")
         print("=====================================\n")
 
     def plot_statistics(self, save_path: str) -> None:
