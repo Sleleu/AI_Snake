@@ -11,7 +11,7 @@ WIDTH = MARGIN + GAME_SIZE + MARGIN + MIN_AI_WIDTH
 
 # Default game settings
 SNAKE_SIZE = 3
-GREEN_FRUITS_NB = 3
+GREEN_FRUITS_NB = 2
 RED_FRUITS_NB = 1
 
 # Game speed
