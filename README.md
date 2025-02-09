@@ -1,6 +1,11 @@
 # About the project
+
 Learn2Slither is a 42 school project focused on implementing a reinforcement learning agent for the Snake game.
 The project involves creating an AI that learns to navigate through **Q-learning** implementation, enabling the snake to collect apples while avoiding collisions.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ebab6150-fe64-4f54-a344-6780dcea2856" alt="Snake Game Learning Process">
+</p>
 
 ## Environment Specifications
 
@@ -12,6 +17,10 @@ The project involves creating an AI that learns to navigate through **Q-learning
 
 ## States and Actions
 The snake agent operates with information from **four directions around its head**, representing its local perception of the environment.
+
+![screenshotsnake](https://github.com/user-attachments/assets/0e744551-0f7d-437e-a55e-44d7c04e107d)
+
+
 This restriction shapes the state space and decision-making process. The agent's actions are limited to four directional movements: **UP, LEFT, DOWN, and RIGHT**.
 
 ## Neural Architecture
