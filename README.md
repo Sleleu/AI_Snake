@@ -49,7 +49,7 @@ Four binary neurons (0 or 1) detect **immediate collision threats in adjacent ce
 The network processes this input through two hidden layers:
 
 - **First hidden layer** contains 128 neurons, allowing for complex pattern recognition
-- **Second hidden layer **contains 64 neurons, further refining these patterns
+- **Second hidden layer** contains 64 neurons, further refining these patterns
 
 ### Output Layer
 
