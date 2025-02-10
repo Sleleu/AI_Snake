@@ -1,6 +1,6 @@
 # About the project
 
-Learn2Slither is a 42 school project focused on implementing a reinforcement learning agent for the Snake game.
+Learn2Slither is a 42 school project focused on implementing a **reinforcement learning** agent for the Snake game.
 The project involves creating an AI that learns to navigate through **Q-learning** implementation, enabling the snake to collect apples while avoiding collisions.
 
 <p align="center">
